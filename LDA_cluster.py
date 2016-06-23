@@ -98,6 +98,8 @@ def LDA_gensim(datos, n_topics, passes):
     # generate LDA model
     ldamodel = models.ldamodel.LdaModel(corpus, num_topics=n_topics, id2word=dictionary, passes=passes)
 
+
+
     end = time.time()
     # Prints the topics.
     for top in ldamodel.print_topics():
@@ -125,6 +127,15 @@ def contarPalabras(datos):
         print(i, sorted_x[i])
 
     print("tiempo Contar: ", end - start)
+
+def similaridadCluster(numclusters, vector_modelo, vector_original):
+    for i in range(1, numclusters):
+        vm = [k for k in vector_modelo if k == i]
+        for j in range(1, numclusters):
+            
+
+    # similaridad = interseccion / union
+
 
 # Sinnia y TASS
 # 1) obtener LDA sobre entrenamiento
