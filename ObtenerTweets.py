@@ -5,16 +5,17 @@ import pandas as pd
 from sqlalchemy import create_engine
 import json
 
-def obtenerTweetsArchivo():
+def obtenerTweetsArchivo(str):
     data = []
-    with open('/home/eduardomartinez/Documents/Sinnia/json/todos.json') as f:
-        for line in f:
-            data.append(json.loads(line))
-
-    datos = []
-    for row in data:
-        datos.append(row['text'])
-    return datos
+    if(str == 'train'):
+        with open('train.txt') as f:
+            for line in f:
+                data.append(line)
+    if (str == 'test'):
+        with open('test.txt') as f:
+            for line in f:
+                data.append(line)
+    return data
 
 def cargarTweetsEnDB():
 
@@ -44,3 +45,9 @@ def obtenerDatosBD():
         datos.append(row[0])
     db.close()
     return datos
+
+# para guardar la lista de items tokenizados en un archivo
+def exportarListaAArchivo(datos, nombreArchivo):
+    f = open(nombreArchivo, "w")
+    for t in datos:
+        print>> f, '\n' + ', '.join(str(x) for x in t)

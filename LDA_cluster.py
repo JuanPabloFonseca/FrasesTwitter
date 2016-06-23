@@ -12,7 +12,7 @@ import LimpiarTweets
 
 def print_top_words(model, feature_names, n_top_words):
     for topic_id, topic in enumerate(model.components_):
-        print('\nTopic Nr.%d:' % int(topic_id + 1))
+        print('Topic Nr.%d:' % int(topic_id + 1))
         print(''.join([feature_names[i] + ' ' + str(round(topic[i], 2))
               +' | ' for i in topic.argsort()[:-n_top_words - 1:-1]]))
 
@@ -29,7 +29,7 @@ def NMF_sklearn(datos, n_topics, n_top_words):
     for t in datos:
         docs.append(', '.join(str(x) for x in t))
     # Use tf-idf features for NMF.
-    print("Extracting tf-idf features for NMF...")
+    print("\nExtracting tf-idf features for NMF...")
     tfidf_vectorizer = TfidfVectorizer(min_df=2, lowercase=False, encoding='utf8mb4')
 
     # t0 = time()
@@ -45,7 +45,7 @@ def NMF_sklearn(datos, n_topics, n_top_words):
     # print("done in %0.3fs." % (time() - t0))
     end = time.time()
 
-    print("\nTopics in NMF model:")
+    print("Topics in NMF model:")
     tfidf_feature_names = tfidf_vectorizer.get_feature_names()
     print_top_words(nmf, tfidf_feature_names, n_top_words)
 
@@ -54,7 +54,7 @@ def NMF_sklearn(datos, n_topics, n_top_words):
 def LDA_sklearn(datos, n_topics, n_top_words, iteraciones):
     # Use tf (raw term count) features for LDA.
     # el numero de veces que cada termino ocurre en cada documento y sumarlos;
-    print("Extracting tf features for LDA...")
+    print("\nExtracting tf features for LDA...")
     start = time.time()
     docs = []
     for t in datos:
@@ -80,16 +80,16 @@ def LDA_sklearn(datos, n_topics, n_top_words, iteraciones):
     lda.fit(tf)
     end = time.time()
 
-    print("\nTopics in LDA model:")
+    print("Topics in LDA model (SKLEARN):")
     tf_feature_names = tf_vectorizer.get_feature_names()
     print_top_words(lda, tf_feature_names, n_top_words)
 
-    print("tiempo LDA sklearn: ", end - start)
+    print("Tiempo LDA sklearn: ", end - start)
 
 def LDA_gensim(datos, n_topics, passes):
     # turn our tokenized documents into a id <-> term dictionary
     start = time.time()
-    print("Fitting LDA gensim ")
+    print("\nFitting LDA gensim ")
     dictionary = corpora.Dictionary(datos)
 
     # convert tokenized documents into a document-term matrix
@@ -104,7 +104,7 @@ def LDA_gensim(datos, n_topics, passes):
         print(top)
     print
 
-    print("tiempo LDA_gensim: ", end - start)
+    print("Tiempo LDA_gensim: ", end - start)
 
 def contarPalabras(datos):
     # palabras = []
@@ -134,7 +134,7 @@ def contarPalabras(datos):
 # TASS vs Resultados de TASS, para indicar porque LDA
 
 def demo():
-    datos = ObtenerTweets.obtenerTweetsArchivo()
+    datos = ObtenerTweets.obtenerTweetsArchivo('train')
     datos = LimpiarTweets.limpiarTexto(datos)
 
     #NMF_sklearn(datos, 3, 5)
