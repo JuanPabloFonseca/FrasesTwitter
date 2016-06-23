@@ -1,186 +1,131 @@
-#!/usr/bin/python
-import MySQLdb
+#!/usr/bin/python3.5
 
-from itertools import chain
-from nltk.tokenize import RegexpTokenizer
-from stop_words import get_stop_words
-from nltk.stem.porter import PorterStemmer
 from gensim import corpora, models
+from sklearn.feature_extraction.text import TfidfVectorizer, CountVectorizer
+from sklearn.decomposition import NMF, LatentDirichletAllocation
 
-import gensim
-import re
 import time
-import unicodedata
 import operator
 
+import ObtenerTweets
+import LimpiarTweets
 
-import json
-import pandas as pd
-from sqlalchemy import create_engine
-
-def obtenerTweetsArchivo():
-    data = []
-    with open('/home/eduardomartinez/Documents/Sinnia/json/todos.json') as f:
-        for line in f:
-            data.append(json.loads(line))
-
-    datos = []
-    for row in data:
-        datos.append(row['text'])
-    return datos
-
-def cargarTweetsEnDB():
-    data = []
-    with open('/home/eduardomartinez/Documents/Sinnia/json/corona.json') as f:
-        for line in f:
-            data.append(json.loads(line))
-    datos = []
-    for tweet in data:
-        text = tweet['text']  # encode unicode_escape
-        user_id = int(tweet['user']['id'])
-        id = int(tweet['id'])
-        datos.append({'status_text': text})
-    engine = create_engine('mysql://root:root@localhost:3306/sinnia') # ?charset=utf8mb4
-    pd.DataFrame(datos).to_sql('corona_csv', engine, if_exists='append') #replace genera la tabla, append utiliza la misma tabla
+def print_top_words(model, feature_names, n_top_words):
+    for topic_id, topic in enumerate(model.components_):
+        print('\nTopic Nr.%d:' % int(topic_id + 1))
+        print(''.join([feature_names[i] + ' ' + str(round(topic[i], 2))
+              +' | ' for i in topic.argsort()[:-n_top_words - 1:-1]]))
 
 
-def obtenerDatosBD():
-    db = MySQLdb.connect(host="localhost", user="root", passwd="root", db="sinnia", charset='utf8')
-    # name of the data base # you must create a Cursor object. It will let you execute all the queries you need
-    cur = db.cursor()
-    # Use all the SQL you like
-    cur.execute("SELECT status_text FROM corona_csv")
-    datos = []
-    for row in cur.fetchall():
-        datos.append(row[0])
-    db.close()
-    return datos
-
-### Regresa los tweets tokenizados por ejemplo
-### [u'j0sedxx', u'comiendo', u'pan', u'dulc', u'momento', u'v']
-def limpiarTexto(datos):
-    tokenizer = RegexpTokenizer(r'\w+')
-    # create Spanish stop words list
-    en_stop = get_stop_words('es')
-    # Create p_stemmer of class PorterStemmer
-    p_stemmer = PorterStemmer()
-    # list for tokenized documents in loop
-    texts = []
-    # loop through document list
-    # for i in doc_set:
+# I discovered the lambda-formular connected to sklearns components_ in "Latent Dirichlet Allocation" Blei/Ng/Jordan (p.1007).
+# There is no normalisation either, so I think the sklearn implementation is correct.
+# In my case it was quiet interesting to get very high values for one topic.
+# This also fitted well to the common meaning of those tokens of this topic.
+# I think the differences in value height go together with the dirichlet distribution, so higher values mean that topics occure more often in the corpus.
+# If I'm right, we actually lose information by normalising.
+def NMF_sklearn(datos, n_topics, n_top_words):
+    docs = []
     start = time.time()
-    for row in datos:
-        # clean and tokenize document string
-        # a minusculas
-        i = row.lower()
+    for t in datos:
+        docs.append(', '.join(str(x) for x in t))
+    # Use tf-idf features for NMF.
+    print("Extracting tf-idf features for NMF...")
+    tfidf_vectorizer = TfidfVectorizer(min_df=2, lowercase=False, encoding='utf8mb4')
 
-        # TOKENIZAR URLS, convertir URL en la palabra url_token
-        p = re.compile("(https?|ftp|file)://[-a-zA-Z0-9+&@#/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#/%=~_|]")
-        raw = p.sub(' ', i)  # url_token
+    # t0 = time()
+    tfidf = tfidf_vectorizer.fit_transform(docs)
 
-        # tokenizar mention
-        # p = re.compile("@[A-Za-z0-9_]+")
-        # raw = p.sub('mention', raw)
-
-        tokens = tokenizer.tokenize(raw)
-
-        # remove stop words from tokens
-        stopped_tokens = [i for i in tokens if not i in en_stop]
-        # Al inicio se mantuvieron porque comento SINNIA que no los quitaban
-        # Pero se mantuvieron por obtener resultados como el siguiente
-        # ('tiempo LDA: ', 42.264963150024414)
-        # (0, u'0.057*url_token + 0.056*corona + 0.036*en + 0.021*el + 0.021*la + 0.017*de + 0.016*del + 0.016*a + 0.015*por + 0.014*y')
-        # (1, u'0.061*url_token + 0.056*corona + 0.044*de + 0.035*la + 0.029*el + 0.022*en + 0.017*a + 0.015*su + 0.014*del + 0.009*por')
-        # (2, u'0.063*corona + 0.048*la + 0.041*de + 0.025*que + 0.022*y + 0.021*url_token + 0.020*a + 0.019*una + 0.013*en + 0.012*no')
-
-        # stem tokens NO APLICA POR NO ESTAR EN BASELINE
-        stemmed_tokens = [p_stemmer.stem(i) for i in stopped_tokens]
-
-        # sin steeming
-        # ('tiempo LDA: ', 26.731714963912964)
-        # (0, u'0.092*url_token + 0.085*corona + 0.012*wilder + 0.008*peso + 0.008*szpilka + 0.007*pesado + 0.007*rey + 0.007*dakar + 0.007*vencer + 0.007*peterhansel')
-        # (1, u'0.089*corona + 0.044*url_token + 0.006*suma + 0.006*dakar + 0.006*peterhansel + 0.006*duod\xe9cima + 0.006*si + 0.005*q + 0.004*quiero + 0.004*rt')
-        # (2, u'0.087*corona + 0.051*url_token + 0.012*miss + 0.011*copa + 0.008*mx + 0.007*1 + 0.005*bien + 0.004*0 + 0.004*fin + 0.004*chivas')
-
-        # add tokens to list
-        texts.append(stemmed_tokens)
+    # Fit the NMF model
+    print("Fitting the NMF model with tf-idf features,"
+          "n_samples=%d and n_features=%d..."
+          % (len(docs), len(docs)))
+    # t0 = time()
+    nmf = NMF(n_components=n_topics, random_state=1, alpha=.1, l1_ratio=.5).fit(tfidf)
+    # exit()
+    # print("done in %0.3fs." % (time() - t0))
     end = time.time()
-    print("tiempo Obtener-Limpieza-Tokenizar: ", end - start)
-    return texts
 
-def LDA(datos):
+    print("\nTopics in NMF model:")
+    tfidf_feature_names = tfidf_vectorizer.get_feature_names()
+    print_top_words(nmf, tfidf_feature_names, n_top_words)
+
+    print("tiempo NMF: ", end - start)
+
+def LDA_sklearn(datos, n_topics, n_top_words, iteraciones):
+    # Use tf (raw term count) features for LDA.
+    # el numero de veces que cada termino ocurre en cada documento y sumarlos;
+    print("Extracting tf features for LDA...")
+    start = time.time()
+    docs = []
+    for t in datos:
+        docs.append(', '.join(str(x) for x in t))
+
+    # max_df ignora terminos que tengan arriba de #de documentos si entero, si flotante porcentaje de documentos
+    # min_df menos de # de documentos
+    # crea una matriz de #DocumentosXDiferentesPalabras con el term frequency en cada celda
+    tf_vectorizer = CountVectorizer(min_df=2, lowercase=False, encoding='utf8mb4')  # max_features=n_features, max_df=0.95,
+
+    # fit_transform(raw_documents[, y])    Learn the vocabulary dictionary and return term - document matrix.
+    tf = tf_vectorizer.fit_transform(docs)
+
+    iter = iteraciones
+    print("Fitting LDA models with tf features, n_samples=%d and n_features=%d iter=%d..." % (tf.shape[0], tf.shape[1], iter))
+
+    # learning method: if the data size is large, the online update will be much faster than the batch update
+    # learning offser : A (positive) parameter that downweights early iterations in online learning
+    # random state: Pseudo-random number generator seed control.
+    lda = LatentDirichletAllocation(n_topics=n_topics, max_iter=iter, learning_method='online', learning_offset=10.0, random_state=0)
+
+    # Learn model for the data X with variational Bayes method.
+    lda.fit(tf)
+    end = time.time()
+
+    print("\nTopics in LDA model:")
+    tf_feature_names = tf_vectorizer.get_feature_names()
+    print_top_words(lda, tf_feature_names, n_top_words)
+
+    print("tiempo LDA sklearn: ", end - start)
+
+def LDA_gensim(datos, n_topics, passes):
     # turn our tokenized documents into a id <-> term dictionary
+    start = time.time()
+    print("Fitting LDA gensim ")
     dictionary = corpora.Dictionary(datos)
 
     # convert tokenized documents into a document-term matrix
     corpus = [dictionary.doc2bow(text) for text in datos]
 
     # generate LDA model
-    start = time.time()
-    ldamodel = gensim.models.ldamodel.LdaModel(corpus, num_topics=3, id2word=dictionary, passes=20)
-    end = time.time()
-    print("tiempo LDA: ", end - start)
+    ldamodel = models.ldamodel.LdaModel(corpus, num_topics=n_topics, id2word=dictionary, passes=passes)
 
+    end = time.time()
     # Prints the topics.
     for top in ldamodel.print_topics():
         print(top)
     print
 
-    # Assigns the topics to the documents in corpus
-    lda_corpus = ldamodel[corpus]
-
-    # Find the threshold, let's set the threshold to be 1/#clusters,
-    # To prove that the threshold is sane, we average the sum of all probabilities:
-    scores = list(chain(*[[score for topic_id, score in topic] \
-                          for topic in [doc for doc in lda_corpus]]))
-    threshold = sum(scores) / len(scores)
-    print(threshold)
-    print
-
-    cluster1 = [j for i, j in zip(lda_corpus, datos) if i[0][1] > i[1][1] and i[0][1] > i[2][1]]
-    cluster2 = [j for i, j in zip(lda_corpus, datos) if i[1][1] > i[0][1] and i[1][1] > i[2][1]]
-    cluster3 = [j for i, j in zip(lda_corpus, datos) if i[2][1] > i[0][1] and i[2][1] > i[1][1]]
-
-    print(len(cluster1))
-    print(len(cluster2))
-    print(len(cluster3))
-
-    #print('Muestra de los 10 tweets de cada cluster')
-    #for i in range(0, 10):
-    #    print(cluster1[i])
-    #    print(cluster2[i])
-    #    print(cluster3[i])
-    #    print('i')
-
-
+    print("tiempo LDA_gensim: ", end - start)
 
 def contarPalabras(datos):
     # palabras = []
     contar = {}
+    start = time.time()
     for row in datos:
         for palabra in row:
-            # palabras.append(palabra)
-            # The normal form KD (NFKD) will apply the compatibility decomposition,
-            # i.e. replace all compatibility characters with their equivalents.
-            palabrastr = unicodedata.normalize('NFKD', palabra).encode('ascii', 'ignore')
-
-            #checar si no es mejor unicode_escape
-
-            if contar.has_key(palabrastr):
-                contar[palabrastr]+=1
+            if palabra in contar:
+                contar[palabra]+=1
             else:
-                contar[palabrastr] = 1
+                contar[palabra]=1
     # ordenar por valor, descendente
     sorted_x = sorted(contar.items(), key=operator.itemgetter(1), reverse=True)
+    end = time.time()
+
     print('Palabras principales por conteo de palabras: ')
     for i in range(0,10):
         print(i, sorted_x[i])
 
+    print("tiempo Contar: ", end - start)
 
-# en documento
-# estudio estadistico mas que estudio formal
-
-# en proyecto python
 # Sinnia y TASS
 # 1) obtener LDA sobre entrenamiento
 # 2) Utilizando las combinaciones lineales, clasificar con el valor maximo tweets de validacion
@@ -189,12 +134,14 @@ def contarPalabras(datos):
 # TASS vs Resultados de TASS, para indicar porque LDA
 
 def demo():
-    datos = obtenerTweetsArchivo()
-    datos = limpiarTexto(datos)
-    LDA(datos)
-    contarPalabras(datos)
+    datos = ObtenerTweets.obtenerTweetsArchivo()
+    datos = LimpiarTweets.limpiarTexto(datos)
 
-    #cargarTweetsEnDB()
+    #NMF_sklearn(datos, 3, 5)
+
+    LDA_gensim(datos, 3, 20)
+    LDA_sklearn(datos, 3, 5, 20)
+
 
 if __name__ == '__main__':
     demo()

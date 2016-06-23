@@ -1,9 +1,9 @@
-import stopwords
+from stopwords import get_stopwords
 
 
 #regresa una lista no tan mala de stopwords en español
 def creaStopWords():
-    es_stop = stopwords.get_stopwords('es')
+    es_stop = get_stopwords('es')
     he = ['he', 'has', 'hemos', 'habéis', 'han', 'haya', 'hayas', 'hayamos', 'hayáis', 'hayan', 'habré',
           'habrás', 'habrá', 'habremos', 'habréis', 'habrán', 'habría', 'habrías', 'habríamos', 'habríais',
           'habrían', 'había', 'habías', 'habíamos', 'habíais', 'habían', 'hube', 'hubiste', 'hubo', 'hubimos',
