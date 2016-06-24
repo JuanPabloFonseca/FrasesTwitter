@@ -98,8 +98,6 @@ def LDA_gensim(datos, n_topics, passes):
     # generate LDA model
     ldamodel = models.ldamodel.LdaModel(corpus, num_topics=n_topics, id2word=dictionary, passes=passes)
 
-
-
     end = time.time()
     # Prints the topics.
     for top in ldamodel.print_topics():
@@ -107,6 +105,8 @@ def LDA_gensim(datos, n_topics, passes):
     print
 
     print("Tiempo LDA_gensim: ", end - start)
+
+    return ldamodel
 
 def contarPalabras(datos):
     # palabras = []
@@ -128,12 +128,34 @@ def contarPalabras(datos):
 
     print("tiempo Contar: ", end - start)
 
-def similaridadCluster(numclusters, vector_modelo, vector_original):
-    for i in range(1, numclusters):
-        vm = [k for k in vector_modelo if k == i]
-        for j in range(1, numclusters):
-            
+# indice de Jaccard
+# interseccion / union = interseccion / a + b - interseccion
+def indiceJaccard(vector_original, vector_modelo):
+    similaridad = []
 
+    for i in range(0, len(set(vector_original))):
+        # numero de elementos del cluster i
+        cardinalidad_vo = len([k for k in vector_original if k == i])
+
+
+        similaridad_i = []
+        for j in range(0, len(set(vector_modelo))):
+            # num elementos en cluster j
+            cardinalidad_vm = len([k for k in vector_modelo if k == j])
+
+            interseccion = 0
+            for l in range(0, len(vector_original)):
+                if(vector_original[l]==i and vector_modelo[l]==j):
+                    interseccion+=1
+
+            if (cardinalidad_vm + cardinalidad_vo - interseccion) > 0:
+                similaridad_i.append(interseccion / (cardinalidad_vm + cardinalidad_vo - interseccion))
+            else:
+                similaridad_i.append(0.0)
+
+        similaridad.append({'original':i, 'similar':[k for k, l in enumerate(similaridad_i) if l == max(similaridad_i)][0], 'vector_simil':similaridad_i})
+
+    return similaridad
     # similaridad = interseccion / union
 
 

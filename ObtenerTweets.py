@@ -10,16 +10,14 @@ def obtenerTweetsArchivo(str):
     if(str == 'train'):
         with open('train.txt') as f:
             for line in f:
-                data.append(line)
+                data.append(line[2:])
     if (str == 'test'):
         with open('test.txt') as f:
             for line in f:
-                data.append(line)
+                data.append(line[2:])
     return data
 
 def cargarTweetsEnDB():
-
-
     data = []
     with open('/home/eduardomartinez/Documents/Sinnia/json/corona.json') as f:
         for line in f:
