@@ -7,8 +7,7 @@ from sklearn.decomposition import NMF, LatentDirichletAllocation
 import time
 import operator
 
-import ObtenerTweets
-import LimpiarTweets
+
 
 def print_top_words(model, feature_names, n_top_words):
     for topic_id, topic in enumerate(model.components_):
@@ -153,6 +152,8 @@ def indiceJaccard(vector_original, vector_modelo):
 
         similaridad.append({'original':i, 'similar':[k for k, l in enumerate(similaridad_i) if l == max(similaridad_i)][0], 'vector_simil':similaridad_i})
 
+
+
     return similaridad
     # similaridad = interseccion / union
 
@@ -194,27 +195,3 @@ def clasifOriginal(str):
                 clas.append(int(line[:1])-1)
     return clas
 
-
-
-def demo():
-    datosTr = ObtenerTweets.obtenerTweetsArchivo('train')
-    datosTr = LimpiarTweets.limpiarTexto(datosTr)
-    ldam=LDA_gensim(datosTr,3,1)
-    # contarPalabras(datosTr)
-
-    datosTest = ObtenerTweets.obtenerTweetsArchivo('test')
-    datosTe = LimpiarTweets.limpiarTexto(datosTest)
-    print(indiceJaccard(clasifOriginal("test"),clasifica(datosTe,ldam)))
-
-    '''i=0
-    for c in ct:
-        print(datosTest[i],end=' ')
-        print("pertenece al tópico ", c)
-        i=i+1'''
-
-    #cargarTweetsEnDB()
-
-
-
-if __name__ == '__main__':
-    demo()
