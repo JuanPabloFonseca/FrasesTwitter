@@ -1,0 +1,42 @@
+#!/bin/sh -f
+#
+# run
+# Usage:  run STOPWORDLIST FILE
+#
+# Gets .text from a JSON FILE Cleans it (urls,accents,MAYUStoMINUS,ESPECIAL CHARS) and executes (LDA).
+#
+SWLIST=stoplist
+EXEC=lda
+if [ ! -r $SWLIST ]; then
+  echo "Run script error: Cannot find $SWLIST archive!"
+  echo "(You must run this script from the directory containing your $SWLIST archive.)"
+  exit 1;
+fi
+if [ ! -x $EXEC ]; then
+   echo "Run script error: Cannot find $EXEC executable!"
+   echo "(You must run this script from the directory containing your $EXEC executable.)"
+   exit 1;
+fi
+SEARCH=`cat stoplist`
+
+if [ $# -lt 1 ]; then
+  echo "Run script error: The run script takes one argument, a JSON textfile..."
+  exit 1;
+fi
+echo "Generando archivo con el texto de los tweets..."
+jq '.text' $1 > tmp_twts
+echo "Generando archivo pasando todos los caracteres a lowercase..."
+tr '[:upper:]' '[:lower:]' < tmp_twts > tmp_lowr
+echo "Generando archivo limpiando URLS..."
+sed 's/[\w \W \s]*http[s]*[a-zA-Z0-9 : \. \/ ; % " \W]*/ URL_TOKEN /g' tmp_lowr > tmp_nurls
+echo "Generando archivo limpiando caracteres especiales..."
+sed 'y/áÁàÀãÃâÂéÉêÊíÍóÓõÕôÔúÚçÇ/aAaAaAaAeEeEiIoOoOoOuUcC/' tmp_nurls > tmp_nsc
+sed -i 's/[^ 0-9a-ZA-Z@#_-]*//g' tmp_nsc
+echo "Generando archivo limpiando stop words..."
+sed -r "s/$SEARCH//g" tmp_nsc > tmp_u
+tr '[:upper:]' '[:lower:]'< tmp_u > $1.FINAL
+
+
+echo " "
+echo " "
+exit 0;
