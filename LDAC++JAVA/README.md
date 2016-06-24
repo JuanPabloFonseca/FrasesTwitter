@@ -15,24 +15,24 @@ La carpeta de TEXT SCRAPPER & LDA contiene 3 archivos:
 En la carpeta TweetsClassifier se encuentra un proyecto de eclipse que se ejecuta de la siguiente manera: 
 
 
-desde bin/java itam.twitter.base.Classifier [ARCHIVODEREGLAS] [ARCHIVOACLASIFICAR]
+desde 
+	./bin/java itam.twitter.base.Classifier [ARCHIVODEREGLAS] [ARCHIVOACLASIFICAR]
 
 El ARCHIVOACLASIFICAR 
-La lista de tweets a clasificar en cada linea un tweet y el tweet ya debe de estar limpio al menos de caracteres especiales y acentos (para clasificar mejor de preferencia tokens separados por espacios)
+Es la lista de tweets a clasificar en cada linea un tweet y el tweet ya debe de estar limpio al menos de caracteres especiales y acentos (para clasificar mejor de preferencia tokens separados por espacios)
 
 El ARCHIVODEREGLAS debe tener un formato similar a:
-Linea de TOPIC1:
-palabra1 valor1
-palabra2 valor2
-.
-.
-.
-Linea de TOPICn:
-palabrax valorx
-palabray valory
-.
-.
-.
-
+Linea de TOPIC1:<br />
+palabra1 valor1<br />
+palabra2 valor2<br />
+.<br />
+.<br />
+.<br />
+Linea de TOPICn:<br />
+palabrax valorx<br />
+palabray valory<br />
+.<br />
+.<br />
+.<br />
 
 
