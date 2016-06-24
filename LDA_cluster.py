@@ -144,14 +144,58 @@ def similaridadCluster(numclusters, vector_modelo, vector_original):
 
 # TASS vs Resultados de TASS, para indicar porque LDA
 
+#entradas: lista de tweets (de test.txt), y los resultados de aplicar lda a los tweets de train.txt
+#salida: lista con la clasificación de los tweets de entrenamiento
+def clasifica(datos,ldamodel):
+    ct=[] #lista con la clasificación de los tweets de test, de acuerdo a ldamodel hecho con los tweets de train
+    for t in datos:
+        ct.append(clasTweet(t,ldamodel))
+    return ct
+
+#recibe un tweet único ya separado en sus tokens, y los resultados del LDA en ldamodel
+#regresa el tópico al que (con mayor probabilidad) ese tweet pertenece
+def clasTweet(tweet,ldamodel):
+    tw=ldamodel.id2word.doc2bow(tweet)#tw contiene las probabilidades del tweet de pertenecer a los distintos tópicos
+
+    a= list(sorted(ldamodel[tw],key=lambda x: x[1]))
+    return a[-1][0] #tomas el tópico con mayor probabilidad
+
+
+#método que obtiene la clasificación original de los tweets
+def clasifOriginal(str):
+    clas=[]
+    if(str=="train"):
+        with open('train.txt') as f:
+            for line in f:
+                int(clas.append(line[:1]))-1 # [:1] es para quedarnos con el primer caracter de cada línea
+    elif(str=="test"):
+        with open('test.txt') as f:
+            for line in f:
+                int(clas.append(line[:1]))-1
+    return clas
+
+
+
+
 def demo():
-    datos = ObtenerTweets.obtenerTweetsArchivo('train')
-    datos = LimpiarTweets.limpiarTexto(datos)
+    datosTr = obtenerTweetsArchivo('train')
+    datosTr = limpiarTexto(datosTr)
+    ldam=LDA(datosTr)
+    contarPalabras(datosTr)
 
-    #NMF_sklearn(datos, 3, 5)
 
-    LDA_gensim(datos, 3, 20)
-    LDA_sklearn(datos, 3, 5, 20)
+    datosTest = obtenerTweetsArchivo('test')
+    datosTe = limpiarTexto(datosTest)
+    print(indiceJaccard(clasifOriginal("test"),clasifica(datosTe,ldam)))
+
+    '''i=0
+    for c in ct:
+        print(datosTest[i],end=' ')
+        print("pertenece al tópico ", c)
+        i=i+1'''
+
+    #cargarTweetsEnDB()
+
 
 
 if __name__ == '__main__':
