@@ -16,7 +16,7 @@ La carpeta de TEXT SCRAPPER & LDA contiene 3 archivos:
 En la carpeta TweetsClassifier se encuentra un proyecto de eclipse que se ejecuta de la siguiente manera:
 desde 
 
-#### ./bin/java itam.twitter.base.Classifier [ARCHIVODEREGLAS] [ARCHIVOACLASIFICAR] #
+>>#### ./bin/java itam.twitter.base.Classifier [ARCHIVODEREGLAS] [ARCHIVOACLASIFICAR] #
 
 >### El ARCHIVOACLASIFICAR # 
 >
