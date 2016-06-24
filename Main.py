@@ -1,3 +1,4 @@
+#!/usr/bin/python3.5
 import LDA_cluster
 import ObtenerTweets
 import LimpiarTweets
@@ -14,7 +15,17 @@ def demo():
 
     clasificacion_modelo = LDA_cluster.clasifica(datosTe,ldam)
 
-    LDA_cluster.indiceJaccard(LDA_cluster.clasifOriginal("test"),clasificacion_modelo)
+    print("Datos TEST: {0}".format(len(datosTest)))
+
+    for j in range(0, num_topicos):
+        print("Cardinalidad del topico {0} es {1}".format(j, len([k for k in clasificacion_modelo if k == j])))
+
+    similaridad = LDA_cluster.indiceJaccard(LDA_cluster.clasifOriginal("test"),clasificacion_modelo)
+
+    # formateo de impresion Jaccard
+    for e in similaridad:
+        print("El cluster original {0}, se parece a {1}, en un {2}%".format(e['original'], e['similar'],
+                                                                            round(max(e['vector_simil']) * 100, 2)))
 
     # imprimir una muestra representativa de los clusters modelo
     print("Muestra de tweets")

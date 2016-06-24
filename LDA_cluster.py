@@ -152,8 +152,6 @@ def indiceJaccard(vector_original, vector_modelo):
 
         similaridad.append({'original':i, 'similar':[k for k, l in enumerate(similaridad_i) if l == max(similaridad_i)][0], 'vector_simil':similaridad_i})
 
-
-
     return similaridad
     # similaridad = interseccion / union
 
@@ -176,8 +174,7 @@ def clasifica(datos,ldamodel):
 #recibe un tweet único ya separado en sus tokens, y los resultados del LDA en ldamodel
 #regresa el tópico al que (con mayor probabilidad) ese tweet pertenece
 def clasTweet(tweet,ldamodel):
-    tw=ldamodel.id2word.doc2bow(tweet)#tw contiene las probabilidades del tweet de pertenecer a los distintos tópicos
-
+    tw=ldamodel.id2word.doc2bow(tweet) #tw contiene las probabilidades del tweet de pertenecer a los distintos tópicos
     a= list(sorted(ldamodel[tw],key=lambda x: x[1]))
     return a[-1][0] #tomas el tópico con mayor probabilidad
 
