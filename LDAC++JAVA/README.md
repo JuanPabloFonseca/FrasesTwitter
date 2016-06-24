@@ -21,9 +21,9 @@
 >Es la lista de tweets a clasificar en cada linea un tweet y el tweet ya debe de estar limpio al menos de caracteres especiales y acentos (para clasificar mejor de preferencia tokens separados por espacios)
 
 >El ARCHIVODEREGLAS debe tener un formato similar a:
->Linea de TOPIC1:
->palabra1 valor1
->palabra2 valor2
+Linea de TOPIC1:
+palabra1 valor1
+palabra2 valor2
 >.
 >.
 >.
