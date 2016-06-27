@@ -1,0 +1,2 @@
+ xmllint --xpath //content general-tweets-train-tagged.xml | sed 's/]]><\/content><content><!\[CDATA\[/\n/g' > OUT_CLEAN
+
