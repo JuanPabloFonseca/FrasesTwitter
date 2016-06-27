@@ -3,10 +3,11 @@
 from gensim import corpora, models
 from sklearn.feature_extraction.text import TfidfVectorizer, CountVectorizer
 from sklearn.decomposition import NMF, LatentDirichletAllocation
+from sklearn.metrics import confusion_matrix
 
 import time
 import operator
-
+import matplotlib.pyplot as plt
 
 
 def print_top_words(model, feature_names, n_top_words):
@@ -31,9 +32,9 @@ def NMF_sklearn(datos, n_topics, n_top_words):
     print("\nExtracting tf-idf features for NMF...")
     tfidf_vectorizer = TfidfVectorizer(min_df=2, lowercase=False, encoding='utf8mb4')
 
-    # t0 = time()
+    # Calcula idf mediante log base 2 de (1 + N/n_i), donde N es el total de tweets, y n_i es el numero de documentos donde aparece la palabra
     tfidf = tfidf_vectorizer.fit_transform(docs)
-
+    
     # Fit the NMF model
     print("Fitting the NMF model with tf-idf features,"
           "n_samples=%d and n_features=%d..."
@@ -62,7 +63,7 @@ def LDA_sklearn(datos, n_topics, n_top_words, iteraciones):
     # max_df ignora terminos que tengan arriba de #de documentos si entero, si flotante porcentaje de documentos
     # min_df menos de # de documentos
     # crea una matriz de #DocumentosXDiferentesPalabras con el term frequency en cada celda
-    tf_vectorizer = CountVectorizer(min_df=2, lowercase=False, encoding='utf8mb4')  # max_features=n_features, max_df=0.95,
+    tf_vectorizer = CountVectorizer(min_df=2, lowercase=True, encoding='utf8mb4')  # max_features=n_features, max_df=0.95,
 
     # fit_transform(raw_documents[, y])    Learn the vocabulary dictionary and return term - document matrix.
     tf = tf_vectorizer.fit_transform(docs)
@@ -126,14 +127,16 @@ def contarPalabras(datos):
     print("tiempo Contar: ", end - start)
 
 # indice de Jaccard
+# regresa vector_indice Jaccard, vector datos modelo clasificados
 # interseccion / union = interseccion / a + b - interseccion
 def indiceJaccard(vector_original, vector_modelo):
     similaridad = []
 
+    vector_jacc = [0 for i in range(0, len(vector_original))]
+
     for i in range(0, len(set(vector_original))):
         # numero de elementos del cluster i
         cardinalidad_vo = len([k for k in vector_original if k == i])
-
 
         similaridad_i = []
         for j in range(0, len(set(vector_modelo))):
@@ -150,9 +153,16 @@ def indiceJaccard(vector_original, vector_modelo):
             else:
                 similaridad_i.append(0.0)
 
-        similaridad.append({'original':i, 'similar':[k for k, l in enumerate(similaridad_i) if l == max(similaridad_i)][0], 'vector_simil':similaridad_i})
+        idx_max = [k for k, l in enumerate(similaridad_i) if l == max(similaridad_i)][0]
+        similaridad.append({'original':i, 'similar':idx_max, 'vector_simil':similaridad_i})
 
-    return similaridad
+
+        indices_j = [k for k, l in enumerate(vector_modelo) if l == idx_max]
+        # acomodar columnas para matrix de confusion, cambiar los valores del cluster j por el que mas se parezca de acuerdo a Jaccard
+        for idx in indices_j:
+            vector_jacc[idx] = i
+
+    return [similaridad, vector_jacc]
     # similaridad = interseccion / union
 
 
@@ -191,4 +201,18 @@ def clasifOriginal(str):
             for line in f:
                 clas.append(int(line[:1])-1)
     return clas
+
+def mostrarMatrixConfusion(titulo,clasificacionOriginal, clasificacionModelo, labels):
+    cm = confusion_matrix(clasificacionOriginal, clasificacionModelo)
+    print(cm)
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    cax = ax.matshow(cm)
+    plt.title(titulo)
+    fig.colorbar(cax)
+    # ax.set_xticklabels([''] + labels)
+    # ax.set_yticklabels([''] + labels)
+    plt.xlabel('Predicted')
+    plt.ylabel('True')
+    plt.show()
 

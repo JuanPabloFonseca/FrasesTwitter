@@ -61,6 +61,9 @@ def limpiarTexto(datos):
         # stem tokens NO APLICA POR NO ESTAR EN BASELINE
         #stemmed_tokens = [p_stemmer.stem(i) for i in stopped_tokens]
 
+
+        #PROCESAR EMOJIS
+
         # add tokens to list
         texts.append(stopped_tokens)
     end = time.time()
