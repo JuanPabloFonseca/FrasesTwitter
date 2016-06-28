@@ -24,7 +24,9 @@ def demo():
     clasificacion_modelo = LDA_cluster.clasifica(datosTe, ldam)
 
     print("TEST")
-    resultados(clasificacion_original, clasificacion_modelo, datosTest, num_topicos)
+    resultados('TEST', clasificacion_original, clasificacion_modelo, datosTest, num_topicos)
+
+    LDA_cluster.showPlots()
 
 
 def resultados(titulo, clasificacion_original, clasificacion_modelo, datos_originales, num_topicos):
