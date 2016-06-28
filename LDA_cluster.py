@@ -5,10 +5,13 @@ from sklearn.feature_extraction.text import TfidfVectorizer, CountVectorizer
 from sklearn.decomposition import NMF, LatentDirichletAllocation
 from sklearn.metrics import confusion_matrix
 
+
 import time
 import operator
 import matplotlib.pyplot as plt
 
+import numpy
+import random
 
 def print_top_words(model, feature_names, n_top_words):
     for topic_id, topic in enumerate(model.components_):
@@ -34,7 +37,7 @@ def NMF_sklearn(datos, n_topics, n_top_words):
 
     # Calcula idf mediante log base 2 de (1 + N/n_i), donde N es el total de tweets, y n_i es el numero de documentos donde aparece la palabra
     tfidf = tfidf_vectorizer.fit_transform(docs)
-    
+
     # Fit the NMF model
     print("Fitting the NMF model with tf-idf features,"
           "n_samples=%d and n_features=%d..."
@@ -63,7 +66,7 @@ def LDA_sklearn(datos, n_topics, n_top_words, iteraciones):
     # max_df ignora terminos que tengan arriba de #de documentos si entero, si flotante porcentaje de documentos
     # min_df menos de # de documentos
     # crea una matriz de #DocumentosXDiferentesPalabras con el term frequency en cada celda
-    tf_vectorizer = CountVectorizer(min_df=2, lowercase=True, encoding='utf8mb4')  # max_features=n_features, max_df=0.95,
+    tf_vectorizer = CountVectorizer(min_df=2, lowercase=False, encoding='utf8mb4')  # max_features=n_features, max_df=0.95,
 
     # fit_transform(raw_documents[, y])    Learn the vocabulary dictionary and return term - document matrix.
     tf = tf_vectorizer.fit_transform(docs)
@@ -90,13 +93,18 @@ def LDA_gensim(datos, n_topics, passes):
     # turn our tokenized documents into a id <-> term dictionary
     start = time.time()
     print("\nFitting LDA gensim ")
+
+
+    numpy.random.seed(15485863)
+    random.seed(15485863)
     dictionary = corpora.Dictionary(datos)
 
     # convert tokenized documents into a document-term matrix
     corpus = [dictionary.doc2bow(text) for text in datos]
 
     # generate LDA model
-    ldamodel = models.ldamodel.LdaModel(corpus, num_topics=n_topics, id2word=dictionary, passes=passes)
+
+    ldamodel = models.ldamodel.LdaModel(corpus, num_topics=n_topics, id2word=dictionary, passes=passes,distributed=False)
 
     end = time.time()
     # Prints the topics.

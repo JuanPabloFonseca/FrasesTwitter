@@ -1,6 +1,6 @@
 #!/usr/bin/python3.5
 
-import pymysql
+
 import pandas as pd
 from sqlalchemy import create_engine
 import json
@@ -33,7 +33,7 @@ def cargarTweetsEnDB():
 
 
 def obtenerDatosBD():
-    db = pymysql.connect(host="localhost", user="root", passwd="root", db="sinnia", charset='utf8')
+    #db = pymysql.connect(host="localhost", user="root", passwd="root", db="sinnia", charset='utf8')
     # name of the data base # you must create a Cursor object. It will let you execute all the queries you need
     cur = db.cursor()
     # Use all the SQL you like

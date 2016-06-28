@@ -3,10 +3,14 @@ import LDA_cluster
 import ObtenerTweets
 import LimpiarTweets
 
+import numpy
+
 def demo():
     datosTrain = ObtenerTweets.obtenerTweetsArchivo('train')
     datosTr = LimpiarTweets.limpiarTexto(datosTrain)
     num_topicos = 3
+    numpy.random.RandomState(15485863)
+    numpy.random.seed(15485863)
     ldam=LDA_cluster.LDA_gensim(datosTr,num_topicos,1)
     # contarPalabras(datosTr)
 
