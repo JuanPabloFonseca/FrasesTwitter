@@ -11,6 +11,12 @@ def demo():
     num_topicos = 3
     numpy.random.RandomState(15485863)
     numpy.random.seed(15485863)
+
+    #print("sklearn lda")
+    #ldask=LDA_cluster.LDA_sklearn(datosTr,num_topicos,5,1)
+
+    #print(str(LDA_cluster.clasTweet(['corona','modelo','basave','gobierno'],ldask,"sklearn"))) prueba de que sí funciona esto
+
     ldam=LDA_cluster.LDA_gensim(datosTr,num_topicos,1)
     # contarPalabras(datosTr)
 
@@ -19,18 +25,26 @@ def demo():
 
     ### TRAIN
     clasificacion_original = LDA_cluster.clasifOriginal("train")
-    clasificacion_modelo = LDA_cluster.clasifica(datosTr, ldam)
+    clasificacion_modeloG = LDA_cluster.clasifica(datosTr, ldam,"gensim")
+    #clasificacion_modeloS = LDA_cluster.clasifica(datosTr, ldask, "sklearn")
+    #comenté la clasificación de lda sklearn porque es un poco lenta
 
-    resultados('TRAIN', clasificacion_original, clasificacion_modelo, datosTrain, num_topicos)
+
+    resultados('TRAIN gensim', clasificacion_original, clasificacion_modeloG, datosTrain, num_topicos)
+    #resultados('TRAIN sklearn', clasificacion_original, clasificacion_modeloS, datosTrain, num_topicos)
 
     ### TEST
     clasificacion_original = LDA_cluster.clasifOriginal("test")
-    clasificacion_modelo = LDA_cluster.clasifica(datosTe, ldam)
+    clasificacion_modeloG = LDA_cluster.clasifica(datosTe, ldam,"gensim")
+    ####clasificacion_modeloS = LDA_cluster.clasifica(datosTe, ldask, "sklearn")
 
-    print("TEST")
-    resultados('TEST', clasificacion_original, clasificacion_modelo, datosTest, num_topicos)
+
+
+    resultados('TEST gensim',clasificacion_original, clasificacion_modeloG, datosTest, num_topicos)
+    ####resultados('TEST sklearn',clasificacion_original, clasificacion_modeloS, datosTest, num_topicos)
 
     LDA_cluster.showPlots()
+
 
 
 def resultados(titulo, clasificacion_original, clasificacion_modelo, datos_originales, num_topicos):

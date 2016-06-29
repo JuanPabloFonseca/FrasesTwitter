@@ -14,10 +14,24 @@ import numpy
 import random
 
 def print_top_words(model, feature_names, n_top_words):
+
     for topic_id, topic in enumerate(model.components_):
         print('Topic Nr.%d:' % int(topic_id + 1))
         print(''.join([feature_names[i] + ' ' + str(round(topic[i], 2))
               +' | ' for i in topic.argsort()[:-n_top_words - 1:-1]]))
+
+def words_and_weights(model,feature_names):
+    words = []
+    weights=[]
+    j = 0
+    n_words=5;
+    for topic_id, topic in enumerate(model.components_):
+        wo=[feature_names[i] for i in topic.argsort()[:-n_words - 1:-1]]
+        we=[round(topic[i], 2) for i in topic.argsort()[:-n_words - 1:-1]]
+        words.append(wo)
+        weights.append(we)
+    return [words,weights]
+
 
 
 # I discovered the lambda-formular connected to sklearns components_ in "Latent Dirichlet Allocation" Blei/Ng/Jordan (p.1007).
@@ -88,6 +102,8 @@ def LDA_sklearn(datos, n_topics, n_top_words, iteraciones):
     print_top_words(lda, tf_feature_names, n_top_words)
 
     print("Tiempo LDA sklearn: ", end - start)
+    return [lda,tf_feature_names]
+
 
 def LDA_gensim(datos, n_topics, passes):
     # turn our tokenized documents into a id <-> term dictionary
@@ -133,6 +149,10 @@ def contarPalabras(datos):
         print(i, sorted_x[i])
 
     print("tiempo Contar: ", end - start)
+
+
+
+
 
 # indice de Jaccard
 # regresa vector_indice Jaccard, vector datos modelo clasificados
@@ -183,18 +203,41 @@ def indiceJaccard(vector_original, vector_modelo):
 
 #entradas: lista de tweets (de test.txt), y los resultados de aplicar lda a los tweets de train.txt
 #salida: lista con la clasificación de los tweets de entrenamiento
-def clasifica(datos,ldamodel):
+def clasifica(datos,model,type):
     ct=[] #lista con la clasificación de los tweets de test, de acuerdo a ldamodel hecho con los tweets de train
+    cont=0
     for t in datos:
-        ct.append(clasTweet(t,ldamodel))
+        ct.append(clasTweet(t,model,type))
+        #print(str(cont))
+        cont+=1
     return ct
 
 #recibe un tweet único ya separado en sus tokens, y los resultados del LDA en ldamodel
 #regresa el tópico al que (con mayor probabilidad) ese tweet pertenece
-def clasTweet(tweet,ldamodel):
-    tw=ldamodel.id2word.doc2bow(tweet) #tw contiene las probabilidades del tweet de pertenecer a los distintos tópicos
-    a= list(sorted(ldamodel[tw],key=lambda x: x[1]))
-    return a[-1][0] #tomas el tópico con mayor probabilidad
+def clasTweet(tweet,model,type):
+    if(type=="gensim"):
+        tw=model.id2word.doc2bow(tweet) #tw contiene las probabilidades del tweet de pertenecer a los distintos tópicos
+        a= list(sorted(model[tw],key=lambda x: x[1]))
+        return a[-1][0] #tomas el tópico con mayor probabilidad
+    else:
+
+        ww=words_and_weights(model[0], model[1])
+        no_topicos=len(ww[0])
+        no_palabras=len(ww[0][0])
+        puntuacion=[0]*no_topicos
+        for i in range(no_topicos):
+            for word in tweet:
+                for j in range(no_palabras):
+                    if word == ww[0][i][j]:
+                        puntuacion[i]+=ww[1][i][j]
+
+                        #print("La palabra "+ word+ " aparece en este tweet y en el tema "+ str(i))
+        clas=puntuacion.index(max(puntuacion))
+        #print("Este tweet pertenece al tema " + str(clas))
+        #print(" ")
+        return clas
+
+
 
 
 #método que obtiene la clasificación original de los tweets
