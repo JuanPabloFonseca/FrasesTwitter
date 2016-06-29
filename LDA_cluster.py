@@ -222,5 +222,7 @@ def mostrarMatrixConfusion(titulo,clasificacionOriginal, clasificacionModelo, la
     # ax.set_yticklabels([''] + labels)
     plt.xlabel('Predicted')
     plt.ylabel('True')
-    plt.show()
+    plt.draw()
 
+def showPlots():
+    plt.show()
