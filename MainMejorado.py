@@ -31,7 +31,7 @@ def principal():
     # ml.clasificadores_supervisados(X, topicos)
 
 
-def obtenerTopicosYTweets():
+def obtenerTopicosYTweets(str):
     clasificacion = []
     tweets = []
 

@@ -38,21 +38,22 @@ def clasificadores_supervisados(X_tr, y_tr, X_te, y_te):
 
     i = 1
     # iterate over datasets, despues sobre los topicos
-    for ds in datasets:
-        # preprocess dataset, split into training and test part
-        X_train, y_train = ds
-        #X = StandardScaler().fit_transform(X)
-        #X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=.4)
 
-        X_test = X_te
-        y_test = y_te.ix[:,0]
+    # preprocess dataset, split into training and test part
+    X_train = X_tr
+    y_train = y_tr.ix[:,0]
+    #X = StandardScaler().fit_transform(X)
+    #X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=.4)
 
-        # iterate over classifiers
-        for name, clf in zip(names, classifiers):
-            clf.fit(X_train, y_train)
+    X_test = X_te
+    y_test = y_te.ix[:,0]
 
-            score = clf.score(X_test, y_test)
+    # iterate over classifiers
+    for name, clf in zip(names, classifiers):
+        clf.fit(X_train, y_train)
 
-            pr, rc, fb, su = precision_recall_fscore_support(y_test, score, average='macro')
+        score = clf.score(X_test)
 
-            print("Clasificador {0}, Precision {1} Recall {2} F1 {3}".format(name, pr, rc, fb))
+        pr, rc, fb, su = precision_recall_fscore_support(y_test, score, average='macro')
+
+        print("Clasificador {0}, Precision {1} Recall {2} F1 {3}".format(name, pr, rc, fb))
