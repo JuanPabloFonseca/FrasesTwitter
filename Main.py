@@ -5,11 +5,20 @@ import LimpiarTweets
 
 from sklearn.metrics import precision_recall_fscore_support
 from sklearn.metrics import roc_curve
+import numpy
 
 def demo():
     datosTrain = ObtenerTweets.obtenerTweetsArchivo('train')
     datosTr = LimpiarTweets.limpiarTexto(datosTrain)
     num_topicos = 3
+    numpy.random.RandomState(15485863)
+    numpy.random.seed(15485863)
+
+    #print("sklearn lda")
+    #ldask=LDA_cluster.LDA_sklearn(datosTr,num_topicos,5,1)
+
+    #print(str(LDA_cluster.clasTweet(['corona','modelo','basave','gobierno'],ldask,"sklearn"))) prueba de que sí funciona esto
+
     ldam=LDA_cluster.LDA_gensim(datosTr,num_topicos,1)
     # contarPalabras(datosTr)
 
@@ -26,10 +35,13 @@ def demo():
 
     ### TEST
     clasificacion_original = LDA_cluster.clasifOriginal("test")
-    clasificacion_modelo = LDA_cluster.clasifica(datosTe, ldam)
+    clasificacion_modeloG = LDA_cluster.clasifica(datosTe, ldam,"gensim")
+    ####clasificacion_modeloS = LDA_cluster.clasifica(datosTe, ldask, "sklearn")
 
-    print("TEST")
-    resultados('TEST', clasificacion_original, clasificacion_modelo, datosTest, num_topicos)
+
+
+    resultados('TEST gensim',clasificacion_original, clasificacion_modeloG, datosTest, num_topicos)
+    ####resultados('TEST sklearn',clasificacion_original, clasificacion_modeloS, datosTest, num_topicos)
 
     LDA_cluster.showPlots()
 
@@ -37,6 +49,7 @@ def demo():
     # matriz binaria de clusters
     # entrenar modelo por topico
     # resultado es matriz binaria con el resultado de cada modelo
+
 
 
 
