@@ -3,6 +3,9 @@ import LDA_cluster
 import ObtenerTweets
 import LimpiarTweets
 
+from sklearn.metrics import precision_recall_fscore_support
+from sklearn.metrics import roc_curve
+
 def demo():
     datosTrain = ObtenerTweets.obtenerTweetsArchivo('train')
     datosTr = LimpiarTweets.limpiarTexto(datosTrain)
@@ -10,14 +13,16 @@ def demo():
     ldam=LDA_cluster.LDA_gensim(datosTr,num_topicos,1)
     # contarPalabras(datosTr)
 
+    # intentar con cross validation
+
     datosTest = ObtenerTweets.obtenerTweetsArchivo('test')
     datosTe = LimpiarTweets.limpiarTexto(datosTest)
 
     ### TRAIN
-    clasificacion_original = LDA_cluster.clasifOriginal("train")
-    clasificacion_modelo = LDA_cluster.clasifica(datosTr, ldam)
+    # clasificacion_original = LDA_cluster.clasifOriginal("train")
+    # clasificacion_modelo = LDA_cluster.clasifica(datosTr, ldam)
 
-    resultados('TRAIN', clasificacion_original, clasificacion_modelo, datosTrain, num_topicos)
+    # resultados('TRAIN', clasificacion_original, clasificacion_modelo, datosTrain, num_topicos)
 
     ### TEST
     clasificacion_original = LDA_cluster.clasifOriginal("test")
@@ -27,6 +32,12 @@ def demo():
     resultados('TEST', clasificacion_original, clasificacion_modelo, datosTest, num_topicos)
 
     LDA_cluster.showPlots()
+
+    # mostrarTweets(num_topicos, datos_originales, clasificacion_original)
+    # matriz binaria de clusters
+    # entrenar modelo por topico
+    # resultado es matriz binaria con el resultado de cada modelo
+
 
 
 def resultados(titulo, clasificacion_original, clasificacion_modelo, datos_originales, num_topicos):
@@ -53,6 +64,16 @@ def resultados(titulo, clasificacion_original, clasificacion_modelo, datos_origi
     LDA_cluster.mostrarMatrixConfusion(titulo, clasificacion_original, similaridad[1], labels=['0', '1', '2'])
 
     # imprimir una muestra representativa de los clusters modelo
+
+    # micro: Calculate metrics globally by counting the total true positives, false negatives and false positives.
+    pr, rc, fb, su = precision_recall_fscore_support(clasificacion_original, similaridad[1], average='micro')
+    fpr, tpr, thresholds = roc_curve(clasificacion_original, similaridad[1], pos_label=2)
+
+    print(pr, rc, fb, su)
+
+    # agregar precision, recall y F1
+
+def mostrarTweets(num_topicos, datos_originales, clasificacion_original):
     print("Muestra de tweets")
     for j in range(0, num_topicos):
         limite = 0
@@ -63,7 +84,6 @@ def resultados(titulo, clasificacion_original, clasificacion_modelo, datos_origi
                 print(datos_originales[i])
             if limite > 10:
                 break
-
 
 if __name__ == '__main__':
     demo()

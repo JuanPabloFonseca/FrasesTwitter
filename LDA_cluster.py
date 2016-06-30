@@ -80,6 +80,8 @@ def LDA_sklearn(datos, n_topics, n_top_words, iteraciones):
     lda.fit(tf)
     end = time.time()
 
+
+
     print("Topics in LDA model (SKLEARN):")
     tf_feature_names = tf_vectorizer.get_feature_names()
     print_top_words(lda, tf_feature_names, n_top_words)
@@ -96,6 +98,7 @@ def LDA_gensim(datos, n_topics, passes):
     corpus = [dictionary.doc2bow(text) for text in datos]
 
     # generate LDA model
+    #
     ldamodel = models.ldamodel.LdaModel(corpus, num_topics=n_topics, id2word=dictionary, passes=passes)
 
     end = time.time()
