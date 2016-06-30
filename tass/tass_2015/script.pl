@@ -3,7 +3,7 @@
 #ejecucion perl script.pl
 use XML::XPath;
 
-my $file = 'general-tweets-train-tagged.xml';
+my $file = 'general-tweets-test.xml'; # general-tweets-train-tagged.xml
 my $xp = XML::XPath->new(filename => $file);
 my $count = 1;
 foreach my $entry ($xp->find('//tweet')->get_nodelist){

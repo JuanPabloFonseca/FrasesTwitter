@@ -10,30 +10,36 @@ import pandas as pd
 # import statsmodels
 import pylab
 
+tfidf_vectorizer = TfidfVectorizer(min_df=2, lowercase=False, encoding='utf8mb4')
 
 def principal():
     #s= ["política,economía","otros,entretenimiento","política","música,entretenimiento","música","economía,política"]
     #s=pd.Series(s)
     #print(s.str.get_dummies(sep=','))
 
-    [topicos,listaTweets]=obtenerTopicosYTweets() #obtiene tópicos
-
+    [topicos,listaTweets]=obtenerTopicosYTweets('train') #obtiene tópicos
     tweetsLimpios=LimpiarTweets.limpiarTexto(listaTweets)
-
     X=obtenerTfIdf(tweetsLimpios)
 
+    [topicosTest, listaTweetsTest] = obtenerTopicosYTweets('test')  # obtiene tópicos
+    tweetsLimpiosTest = LimpiarTweets.limpiarTexto(listaTweetsTest)
+    X_test = calcularTFIDF(tweetsLimpiosTest)
 
-    ml.clasificadores_supervisados(X, topicos)
+    ml.clasificadores_supervisados(X, topicos, X_test, topicosTest)
 
     # X = word2vec
-
-    ml.clasificadores_supervisados(X, topicos)
+    # ml.clasificadores_supervisados(X, topicos)
 
 
 def obtenerTopicosYTweets():
     clasificacion = []
     tweets = []
-    with open('tass/tass_2015/tweetsTopic.txt') as f:
+
+    if(str == 'train'):
+        archivo = 'tass/tass_2015/tweetsTopic.txt'
+    else:
+        archivo = 'tass/tass_2015/generalTweetsTest.txt'
+    with open(archivo) as f:
         for line in f:
             contenido = line.split('\\\\\\',1)
             clasificacion.append(contenido[0])
@@ -49,11 +55,17 @@ def obtenerTfIdf(datos):
     for t in datos:
         docs.append(', '.join(str(x) for x in t))
     # Use tf-idf features
-    tfidf_vectorizer = TfidfVectorizer(min_df=2, lowercase=False, encoding='utf8mb4')
 
     # Calcula idf mediante log base 2 de (1 + N/n_i), donde N es el total de tweets, y n_i es el numero de documentos donde aparece la palabra
     tfidf = tfidf_vectorizer.fit_transform(docs)
-    print(tfidf.shape)
+    return tfidf
+
+def calcularTFIDF(datos):
+    docs = []
+    for t in datos:
+        docs.append(', '.join(str(x) for x in t))
+    tfidf = tfidf_vectorizer.transform(docs)
+    return tfidf
 
 if __name__ == '__main__':
     principal()
