@@ -112,9 +112,6 @@ def LDA_gensim(datos, n_topics, passes):
     start = time.time()
     print("\nFitting LDA gensim ")
 
-
-    numpy.random.seed(15485863)
-    random.seed(15485863)
     dictionary = corpora.Dictionary(datos)
 
     # convert tokenized documents into a document-term matrix

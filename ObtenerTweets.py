@@ -32,17 +32,17 @@ def cargarTweetsEnDB():
     pd.DataFrame(datos).to_sql('corona_csv', engine, if_exists='append') #replace genera la tabla, append utiliza la misma tabla
 
 
-def obtenerDatosBD():
-    #db = pymysql.connect(host="localhost", user="root", passwd="root", db="sinnia", charset='utf8')
-    # name of the data base # you must create a Cursor object. It will let you execute all the queries you need
-    cur = db.cursor()
-    # Use all the SQL you like
-    cur.execute("SELECT status_text FROM corona_csv")
-    datos = []
-    for row in cur.fetchall():
-        datos.append(row[0])
-    db.close()
-    return datos
+# def obtenerDatosBD():
+    # db = pymysql.connect(host="localhost", user="root", passwd="root", db="sinnia", charset='utf8')
+    ## name of the data base # you must create a Cursor object. It will let you execute all the queries you need
+    # cur = db.cursor()
+    ## Use all the SQL you like
+    # cur.execute("SELECT status_text FROM corona_csv")
+    # datos = []
+    # for row in cur.fetchall():
+    #    datos.append(row[0])
+    # db.close()
+    # return datos
 
 # para guardar la lista de items tokenizados en un archivo
 def exportarListaAArchivo(datos, nombreArchivo):
