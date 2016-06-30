@@ -2,9 +2,11 @@ import LDA_cluster
 import ObtenerTweets
 import LimpiarTweets
 
+import ML_MejoraAlBaseline as ml
+
 import numpy
 import pandas as pd
-import statsmodels
+# import statsmodels
 import pylab
 
 
@@ -13,22 +15,33 @@ def principal():
     #s=pd.Series(s)
     #print(s.str.get_dummies(sep=','))
 
-    topicos=obtenerTopicosTweets() #obtiene tópicos
-    topicos=pd.Series(topicos)
-    tablaTopicos=topicos.str.get_dummies(sep=',')#genera la matriz binaria
-    print(tablaTopicos)
-    #print(tablaTopicos.std())
-    #print(tablaTopicos["econom?a"][3])
+    TT=obtenerTopicosTweets() #obtiene tópicos
 
 
+    print(TT[0].loc[[0]]) # topics de tweet 0
+    print(TT[1][0])  # tweet 0
+
+    X = tfidf(TT[1])
+
+    ml.clasificadores_supervisados(X, TT[0])
+
+    X = word2vec
+
+    ml.clasificadores_supervisados(X, TT[0])
 
 def obtenerTopicosTweets():
-    data = []
+    clasificacion = []
+    tweets = []
     with open('tass/tass_2015/tweetsTopic.txt') as f:
         for line in f:
-            data.append(line.split('\\',1)[0])
+            contenido = line.split('\\\\\\',1)
+            clasificacion.append(contenido[0])
+            tweets.append(contenido[1])
 
-    return data
+    topicos = pd.Series(clasificacion)
+    tablaTopicos = topicos.str.get_dummies(sep=',')  # genera la matriz binaria
+
+    return [tablaTopicos, tweets]
 
 
 
