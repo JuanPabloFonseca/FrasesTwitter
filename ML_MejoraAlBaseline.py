@@ -18,42 +18,43 @@ h = .02  # step size in the mesh
 
 
 def clasificadores_supervisados(X_tr, y_tr, X_te, y_te):
-    names = ["Nearest Neighbors", "Linear SVM", "RBF SVM", "Decision Tree",
-             "Random Forest", "AdaBoost", "Naive Bayes", "Linear Discriminant Analysis",
-             "Quadratic Discriminant Analysis"]
-    classifiers = [
-        KNeighborsClassifier(3),
-        SVC(kernel="linear", C=0.025),
-        SVC(gamma=2, C=1),
-        DecisionTreeClassifier(max_depth=5),
-        RandomForestClassifier(max_depth=5, n_estimators=10, max_features=1),
-        AdaBoostClassifier(),
-        GaussianNB(),
-        LinearDiscriminantAnalysis(),
-        QuadraticDiscriminantAnalysis()]
+    names = [
+         "Nearest Neighbors",
+         "Linear SVM",
+         "RBF SVM",
+         "Decision Tree",
+        # "Naive Bayes"
+    ]
 
 
+    resultado = []
 
-    datasets = np.array([X_tr,y_tr.ix[:,0]])
+    # iterate over topics
+    for i in range(0, len(y_tr.columns)):
 
-    i = 1
-    # iterate over datasets, despues sobre los topicos
+        X_train = X_tr.toarray()
+        y_train = y_tr.ix[:, i]
 
-    # preprocess dataset, split into training and test part
-    X_train = X_tr
-    y_train = y_tr.ix[:,0]
-    #X = StandardScaler().fit_transform(X)
-    #X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=.4)
+        X_test = X_te.toarray()
+        y_test = y_te.ix[:, i]
 
-    X_test = X_te
-    y_test = y_te.ix[:,0]
+        classifiers = [
+            KNeighborsClassifier(3),
+            SVC(kernel="poly", degree=3),
+            SVC(gamma=2, C=1),
+            DecisionTreeClassifier(max_depth=5),
+            # GaussianNB()
+        ]
 
-    # iterate over classifiers
-    for name, clf in zip(names, classifiers):
-        clf.fit(X_train, y_train)
+        # iterate over classifiers
+        for name, clf in zip(names, classifiers):
+            clf.fit(X_train, y_train)
 
-        score = clf.score(X_test)
+            # score = clf.score(X_test)
+            score = clf.predict(X_test)
 
-        pr, rc, fb, su = precision_recall_fscore_support(y_test, score, average='macro')
+            pr, rc, fb, su = precision_recall_fscore_support(y_test, score, average='binary') # macro
 
-        print("Clasificador {0}, Precision {1} Recall {2} F1 {3}".format(name, pr, rc, fb))
+            print("Topico {0}-Clasificador {1}: Precision {2} Recall {3} F1 {4}".format(i, name, pr, rc, fb))
+
+        resultado.append(classifiers)
