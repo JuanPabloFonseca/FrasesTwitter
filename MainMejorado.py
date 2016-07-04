@@ -3,7 +3,9 @@
 import LDA_cluster
 import ObtenerTweets
 import LimpiarTweets
+
 from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.decomposition import PCA
 
 import ML_MejoraAlBaseline as ml
 
@@ -12,27 +14,36 @@ import pandas as pd
 # import statsmodels
 import pylab
 
+import time
+
 from sklearn.cross_validation import train_test_split
 
 tfidf_vectorizer = TfidfVectorizer(min_df=2, lowercase=False, encoding='utf8mb4')
 
 def principal():
-    #s= ["política,economía","otros,entretenimiento","política","música,entretenimiento","música","economía,política"]
-    #s=pd.Series(s)
-    #print(s.str.get_dummies(sep=','))
-
     [topicosTrain,listaTweets]=obtenerTopicosYTweets('train') #obtiene tópicos
 
-    # X_train, X_test, y_train, y_test = train_test_split(listaTweets, topicos, test_size=0.25, random_state=42)
-
     tweetsLimpios=LimpiarTweets.limpiarTexto(listaTweets)
-    X = obtenerTfIdf(tweetsLimpios)
+    X_tr = obtenerTfIdf(tweetsLimpios)
 
-    # X = StandardScaler().fit_transform(X)
+    start = time.time()
+
+    pca = PCA(n_components=0.90)
+    X = pca.fit_transform(X_tr.toarray())
+
+    end = time.time()
+    print("tiempo fit_transform TRAIN PCA: ", end - start)
+
+    print("Reduccion de {0} a {1}".format(X_tr.shape[1], len(pca.explained_variance_ratio_)))
 
     [topicosTest, listaTweetsTest] = obtenerTopicosYTweets('test')  # obtiene tópicos
     tweetsLimpiosTest = LimpiarTweets.limpiarTexto(listaTweetsTest)
     X_te = calcularTFIDF(tweetsLimpiosTest)
+
+    start = time.time()
+    X_te = pca.transform(X_te.toarray())
+    end = time.time()
+    print("tiempo transform TEST PCA: ", end - start)
 
     ml.clasificadores_supervisados(X, topicosTrain, X_te, topicosTest)
 
@@ -44,9 +55,9 @@ def obtenerTopicosYTweets(str):
     tweets = []
 
     if(str == 'train'):
-        archivo = 'tass/tass_2015/tweetsTopic.txt'
+        archivo = 'tass/TASSTrain.txt'
     else:
-        archivo = 'tass/TASSTest.txt'
+        archivo = 'tass/TASSTest1k.txt'
     with open(archivo) as f:
         for line in f:
             contenido = line.split('\\\\\\',1)
