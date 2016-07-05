@@ -16,7 +16,7 @@ import time
 from sklearn.decomposition import PCA
 from sklearn.cross_validation import train_test_split
 
-tfidf_vectorizer = TfidfVectorizer(max_features=4000,min_df=2, lowercase=False, encoding='utf8mb4',ngram_range=(2,2))
+tfidf_vectorizer = TfidfVectorizer(max_features=4000,min_df=4, lowercase=False, encoding='utf8mb4',ngram_range=(2,5))
 
 def principal():
     [topicosTrain,listaTweets]=obtenerTopicosYTweets('train') #obtiene tópicos
@@ -24,6 +24,7 @@ def principal():
     tweetsLimpios=LimpiarTweets.limpiarTexto(listaTweets)
     X_tr = obtenerTfIdf(tweetsLimpios)
     start = time.time()
+    print(X_tr.shape)
 
     pca = PCA(n_components=0.90)
     Xpca = pca.fit_transform(X_tr.toarray())
