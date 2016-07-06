@@ -5,6 +5,7 @@ import LimpiarTweets
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn import linear_model
 from sklearn.metrics import precision_recall_fscore_support
+from sklearn.multiclass import OneVsRestClassifier
 
 import ML_MejoraAlBaseline as ml
 
@@ -67,7 +68,6 @@ def principal():
     RLdf=pd.concat([RLdf,Xdf],axis=1) #juntas matriz binaria de tópicos y Xdf (tfidf con PCA)
 
 
-
     #revisar si son o no demasiadas columnas para la regresión logística
 
     X_te_arr = X_te.toarray()
@@ -82,59 +82,43 @@ def principal():
     #print(PredDataFrame)
 
 
-
     # X = word2vec
     # ml.clasificadores_supervisados(X, topicos)
 
 def regresionLogistica(RLdf,X_te_df,topicosTest):
-    train_cols = RLdf.columns[10:]
-    logit = linear_model.LogisticRegression()
 
-    logit.fit(X=RLdf[train_cols], y=RLdf['cine'])
-    P0 = pd.DataFrame(logit.predict(X=X_te_df))
-    #logit.fit(X=RLdf[train_cols], y=RLdf['deportes']) no hay de deportes
+    model = OneVsRestClassifier(linear_model.LogisticRegression())
+    model.fit(X=RLdf[RLdf.columns[10:]], y=RLdf[RLdf.columns[:10]])
+    PredDF = pd.DataFrame(model.predict(X_te_df))
 
-    logit.fit(X=RLdf[train_cols], y=RLdf['economía'])
-    P2 = pd.DataFrame(logit.predict(X=X_te_df))
-    logit.fit(X=RLdf[train_cols], y=RLdf['entretenimiento'])
-    P3 = pd.DataFrame(logit.predict(X=X_te_df))
-    logit.fit(X=RLdf[train_cols], y=RLdf['fútbol'])
-    P4 = pd.DataFrame(logit.predict(X=X_te_df))
-    logit.fit(X=RLdf[train_cols], y=RLdf['literatura'])
-    P5 = pd.DataFrame(logit.predict(X=X_te_df))
-    logit.fit(X=RLdf[train_cols], y=RLdf['música'])
-    P6 = pd.DataFrame(logit.predict(X=X_te_df))
-    logit.fit(X=RLdf[train_cols], y=RLdf['otros'])
-    P7 = pd.DataFrame(logit.predict(X=X_te_df))
-    logit.fit(X=RLdf[train_cols], y=RLdf['política'])
-    P8 = pd.DataFrame(logit.predict(X=X_te_df))
-    logit.fit(X=RLdf[train_cols], y=RLdf['tecnología'])
-    P9 = pd.DataFrame(logit.predict(X=X_te_df))
-
-
-    pr0, rc0, fb0, su0 = precision_recall_fscore_support(topicosTest['cine'], P0, average='binary')
+    #de manera compacta:
+    '''pr0, rc0, fb0, su0 = precision_recall_fscore_support(topicosTest['cine'], PredDF[0], average='binary')
     print("Cine: Precision {0}, Recall {1}, F1 {2}".format(pr0, rc0, fb0))
-    pr2, rc2, fb2, su2 = precision_recall_fscore_support(topicosTest['economía'], P2, average='binary')
+    for i in range(1,9):
+        pr, rc, fb, su = precision_recall_fscore_support(topicosTest.iloc[:,i], PredDF[i+1], average='binary')
+        print("Precision {0}, Recall {1}, F1 {2}".format(pr, rc, fb))'''
+
+    pr0, rc0, fb0, su0 = precision_recall_fscore_support(topicosTest['cine'], PredDF[0], average='binary')
+    print("Cine: Precision {0}, Recall {1}, F1 {2}".format(pr0, rc0, fb0))
+    pr2, rc2, fb2, su2 = precision_recall_fscore_support(topicosTest['economía'], PredDF[2], average='binary')
     print("Economía: Precision {0}, Recall {1}, F1 {2}".format(pr2, rc2, fb2))
-    pr3, rc3, fb3, su3 = precision_recall_fscore_support(topicosTest['entretenimiento'], P3, average='binary')
+    pr3, rc3, fb3, su3 = precision_recall_fscore_support(topicosTest.iloc[:,2], PredDF[3], average='binary')
     print("Entretenimiento: Precision {0}, Recall {1}, F1 {2}".format(pr3, rc3, fb3))
-    pr4, rc4, fb4, su4 = precision_recall_fscore_support(topicosTest['fútbol'], P4, average='binary')
+    pr4, rc4, fb4, su4 = precision_recall_fscore_support(topicosTest['fútbol'], PredDF[4], average='binary')
     print("Fútbol: Precision {0}, Recall {1}, F1 {2}".format(pr4, rc4, fb4))
-    pr5, rc5, fb5, su5 = precision_recall_fscore_support(topicosTest['literatura'], P5, average='binary')
+    pr5, rc5, fb5, su5 = precision_recall_fscore_support(topicosTest['literatura'], PredDF[5], average='binary')
     print("Literatura: Precision {0}, Recall {1}, F1 {2}".format(pr5, rc5, fb5))
-    pr6, rc6, fb6, su6 = precision_recall_fscore_support(topicosTest['música'], P6, average='binary')
+    pr6, rc6, fb6, su6 = precision_recall_fscore_support(topicosTest['música'], PredDF[6], average='binary')
     print("Música: Precision {0}, Recall {1}, F1 {2}".format(pr6, rc6, fb6))
-    pr7, rc7, fb7, su7 = precision_recall_fscore_support(topicosTest['otros'], P7, average='binary')
+    pr7, rc7, fb7, su7 = precision_recall_fscore_support(topicosTest.iloc[:,6], PredDF[7], average='binary')
     print("Otros: Precision {0}, Recall {1}, F1 {2}".format(pr7, rc7, fb7))
-    pr8, rc8, fb8, su8 = precision_recall_fscore_support(topicosTest['política'], P8, average='binary')
+    pr8, rc8, fb8, su8 = precision_recall_fscore_support(topicosTest.iloc[:,7], PredDF[8], average='binary')
     print("Política: Precision {0}, Recall {1}, F1 {2}".format(pr8, rc8, fb8))
-    pr9, rc9, fb9, su9 = precision_recall_fscore_support(topicosTest['tecnología'], P9, average='binary')
+    pr9, rc9, fb9, su9 = precision_recall_fscore_support(topicosTest.iloc[:,8], PredDF[9], average='binary')
     print("Tecnología: Precision {0}, Recall {1}, F1 {2}".format(pr9, rc9, fb9))
 
-    P1=pd.DataFrame(np.zeros((1000,1), dtype=np.int))#no hay ninguno del tema de deportes
+    return PredDF
 
-    PredDataFrame = pd.concat([P0, P1, P2, P3, P4, P5, P6, P7, P8, P9], axis=1)
-    return PredDataFrame
 
 def obtenerTopicosYTweets(str):
     clasificacion = []
