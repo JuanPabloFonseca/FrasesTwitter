@@ -10,7 +10,8 @@ import misStopWords
 ### Regresa los tweets tokenizados por ejemplo
 ### [u'j0sedxx', u'comiendo', u'pan', u'dulc', u'momento', u'v']
 def limpiarTexto(datos):
-    tokenizer = RegexpTokenizer(r'\w+')
+    patterns = r'[#@][^\s]+|\d+\.\d*|\w+'
+    tokenizer = RegexpTokenizer(patterns)
     # create Spanish stop words list
     en_stop = misStopWords.creaStopWords()
     # Create p_stemmer of class PorterStemmer
@@ -71,8 +72,11 @@ def limpiarTexto(datos):
     print("tiempo Obtener-Limpieza-Tokenizar: ", end - start)
     return texts
 
-def limpiarTextoTweet(tweet, stop_words):
-    tokenizer = RegexpTokenizer(r'\w+')
+def limpiarTextoTweet(tweet, stop_words=[]):
+
+    patterns = r'[#@][^\s]+|\d+\.\d*|\w+'
+    tokenizer = RegexpTokenizer(patterns)
+
     # create Spanish stop words list
     en_stop = stop_words
     # Create p_stemmer of class PorterStemmer
@@ -98,7 +102,7 @@ def limpiarTextoTweet(tweet, stop_words):
     # p = re.compile("@[A-Za-z0-9_]+")
     # raw = p.sub('mention', raw)
 
-    tokens = tokenizer.tokenize(raw)
+    tokens = tokenizer.tokenize(raw) # tokeniza una mencion @algo como algo
 
     # remove stop words from tokens
     stopped_tokens = [i for i in tokens if not i in en_stop]
@@ -127,21 +131,20 @@ def separaTokensMantienePuntuacion(texto):
     i=0
     for c in texto:
 
-        if c in " \n":
+        if c in " \n|": # estos separadores no se mantienen en el resultado
             if len(palabra)>0:
                 palabras.append(palabra)
                 palabra = ''
-        elif i == len(texto)-1:
+        elif i == len(texto)-1: # si es el final de la oracion
             palabra += c
             palabras.append(palabra)
             palabra = ''
-        elif c in ".,¿¡!?:;*":
+        elif c in ".,¿¡!?:;*\"\'()": # estos separadores si se mantienen
             palabras.append(palabra)
             palabra = ''
             palabras.append(c)
         else:
-            if ord(c)<256:
-                palabra += c
+            palabra += c
 
         i += 1
     return palabras
@@ -157,10 +160,12 @@ def quitarAcentos(text):
     return text
 
 def quitarEmoticons(text):
-    try:
-        # UCS-4
-        highpoints = re.sub('[U00010000-U0010ffff]', '', text)
-    except re.error:
-        # UCS-2
-        highpoints = re.sub('[uD800-uDBFF][uDC00-uDFFF]', '', text)
-    return highpoints
+
+    #try:
+    #    # UCS-4
+    #    highpoints = re.sub('[U00010000-U0010ffff]', '', text)
+    #except re.error:
+    #    # UCS-2
+    #    highpoints = re.sub('[uD800-uDBFF][uDC00-uDFFF]', '', text)
+
+    return text

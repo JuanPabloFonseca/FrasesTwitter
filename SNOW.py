@@ -110,9 +110,12 @@ if __name__ == "__main__":
     dfVocTimeWindows = {}
     t = 0
     ntweets = 0
+    tweettotales = 0
 
     st = StanfordPOSTagger('spanish-distsim.tagger')
-    tweets_pos_tagged = []
+    tweets_cluster = []
+
+    # tweets_pos_tagged = []
 
     #	fout.write("\n--------------------start time window tweets--------------------\n")
     # efficient line-by-line read of big files
@@ -120,12 +123,16 @@ if __name__ == "__main__":
         # [tweet_unixtime, tweet_gmttime, tweet_id, text, hashtags, users, urls, media_urls, nfollowers, nfriends] = eval(
         #    line)
 
+        tweettotales += 1
+        if tweettotales % 10 == 0:
+            print(tweettotales)
+
         contenido = line.split('\\\\\\')
         # datetime.strptime(fecha, '%a %b %d %H:%M:%S %z %Y')
         tweet_gmttime = datetime.strptime(contenido[0][1:], '%a %b %d %H:%M:%S %z %Y') # contenido[0]
         tweet_unixtime = tweet_gmttime.timestamp()
         tweet_id = contenido[1]
-        text = contenido[2]
+        text = contenido[2][:-2]
         media_urls = ""
 
         users = re.findall("@[^\s]+", text)
@@ -140,19 +147,18 @@ if __name__ == "__main__":
         # #while this condition holds we are within the given size time window
         if (tweet_unixtime - tweet_unixtime_old) < time_window_mins * 60:
             ntweets += 1
-            print(ntweets)
 
             # normalize text and tokenize
             features = li.limpiarTextoTweet(text, stop_words)
             tweet_bag = ""
             try:
                 for user in set(users):
-                    tweet_bag += user.lower() + ","
+                    tweet_bag += user.lower() + " , "
                 for tag in set(hashtags):
                     if tag.lower() not in stop_words:
-                        tweet_bag += tag.lower() + ","
+                        tweet_bag += tag.lower() + " , "
                 for feature in features:
-                    tweet_bag += feature + ","
+                    tweet_bag += feature + " , "
             except:
                 # print "tweet_bag error!", tweet_bag, len(tweet_bag.split(","))
                 pass
@@ -171,16 +177,15 @@ if __name__ == "__main__":
 
                 text = text.lower()
                 text = re.sub("(https?|ftp|file)://[-a-zA-Z0-9+&@#/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#/%=~_|]", ' ',
-                             text)  # url_token
+                              text)  # url_token
                 text = li.quitarAcentos(text)
                 text = li.quitarEmoticons(text)
 
-                print(text)
+                # print(text)
                 sen = li.separaTokensMantienePuntuacion(text)
                 if (len(sen) > 0):
-                    tokens = st.tag(sen)
-                    tweets_pos_tagged.append(tokens)
-                    print(tokens)
+                    tweets_cluster.append(sen)
+                # print(tokens)
 
 
                 # print urls_window_corpus
@@ -194,7 +199,7 @@ if __name__ == "__main__":
 
             # first only cluster tweets
 
-            vectorizer = CountVectorizer(tokenizer=custom_tokenize_text, binary=True,
+            vectorizer = CountVectorizer(tokenizer=li.limpiarTextoTweet, binary=True,
                                          min_df=max(int(len(window_corpus) * 0.0025), 7), ngram_range=(2, 3)) # min_df estaba en 10, habria que hacerlo dinamico
 
             try:
@@ -203,11 +208,14 @@ if __name__ == "__main__":
                 print("No se encontraron suficientes documentos para definir un tema")
                 continue
 
+
+
             map_index_after_cleaning = {}
             Xclean = np.zeros((1, X.shape[1]))
             for i in range(0, X.shape[0]):
                 # keep sample with size at least 5
-                if X[i].sum() > 4: # estaba en 4 ### PARAMETRO
+                # estaba en 4 ### PARAMETRO A REVISAR, PIDE QUE EN UN DOCUMENTO APAREZCAN MINIMO 4 NGRAMAS
+                if X[i].sum() > 2:
                     Xclean = np.vstack([Xclean, X[i].toarray()])
                     map_index_after_cleaning[Xclean.shape[0] - 2] = i
 
@@ -215,7 +223,8 @@ if __name__ == "__main__":
 
             # NO HAY NGRAMAS REPETIDOS EN SUFICIENTES DOCUMENTOS
             if(len(Xclean)==0):
-                print("Otra iteracion, no hay suficientes n-gramas en documentos")
+                print("##########################    Otra iteracion, no hay suficientes n-gramas en documentos")
+                # se requiere que el ngrama (bigrama o trigrama) aparezca al menos en 7 tweets sin razon alguna, habria que revisar ese numero, antes estaba en 10
                 continue
 
             print("total tweets in window:", ntweets)
@@ -232,21 +241,44 @@ if __name__ == "__main__":
 
             boost_entity = {}
 
+            print("Indentificando sustantivos con StanfordPOSTagger")
+            for ngram in vocX:
+                ngramas = ngram.split(sep=' ')
+                for tweet in tweets_cluster:
+                    x = [True for x in ngramas if x in tweet] # revisar para mantener el orden
+                    if len(x) == len(ngramas): # if ngram in tweet:
+                        tokens = st.tag(tweet) # REMOVES UNDERSCORES FROM TOKENS
+                        # tweets_pos_tagged.append(tokens)
+
+                        for term in ngramas:
+                            if term in [x[0] for x in tokens if x[1].startswith('n')]:
+                                if ngram.strip() in boost_entity.keys():
+                                    boost_entity[ngram.strip()] += 2.5
+                                else:
+                                    boost_entity[ngram.strip()] = 2.5
+                            else:
+                                if not ngram.strip() in boost_entity.keys() or boost_entity[ngram.strip()] < 2.5:
+                                    boost_entity[ngram.strip()] = 1.0
+                        break
+
 
             # si el ngrama tiene un noun boost
-            for ngram in vocX:
-                for term in ngram.split(sep=' '):
-                    for pos_tweet in tweets_pos_tagged:
-                        for pos_term in pos_tweet:
-                            if term == pos_term[0] and pos_term[1].startswith('n'):
-                                boost_entity[ngram.strip()] = 2.5
-                            else:
-                                boost_entity[ngram.strip()] = 1.0
 
-            # limpiar cluster para siguiente iteracion
-            tweets_pos_tagged = []
+            # for ngram in vocX:
+            #     for term in ngram.split(sep=' '):
+            #         for pos_tweet in tweets_pos_tagged:
+            #                 if term in [x[0] for x in pos_tweet if x[1].startswith('n')]:
+            #                     boost_entity[ngram.strip()] = 2.5
+            #                 else:
+            #                     boost_entity[ngram.strip()] = 1.0
+            #
+            # # limpiar cluster para siguiente iteracion
+            # tweets_pos_tagged = []
 
-            ### CODIGO ORIGINAL _ TENIA POS TAGGING AFTER CLEANING
+            print("boosted entities")
+            print(boost_entity)
+
+            ### CODIGO ORIGINAL _ TENIA POS TAGGING AFTER CLEANING, modificado por por tagger antes de limpieza y por stanford tagger para español
             ## pos_tokens = CMUTweetTagger.runtagger_parse([term.upper() for term in vocX])
             ## print("inicia POS tagger {0}".format(vocX))
             ## st = StanfordPOSTagger('spanish-distsim.tagger')
@@ -280,7 +312,9 @@ if __name__ == "__main__":
                     repetidas += 1
                 else:
                     dfVoc[k] = v
+
             print(repetidas)
+
             for k in dfVoc:
                 try:
                     dfVocTimeWindows[k] += dfVoc[k]
@@ -295,6 +329,7 @@ if __name__ == "__main__":
                     boosted_wdfVoc[k] = wdfVoc[k] * boost_entity[k]
                 except:
                     boosted_wdfVoc[k] = wdfVoc[k]
+
             print("sorted wdfVoc*boost_entity:")
             print(sorted(((v, k) for k, v in boosted_wdfVoc.items()), reverse=True))
 
@@ -390,6 +425,8 @@ if __name__ == "__main__":
             # NO HAY SUFICIENTES CLUSTERS, FALTA OBTENER HEADLINES DE UN SOLO CLUSTER
             if(len(distH)<2):
                 print("Otra iteracion, no hay suficientes clusters")
+                # aqui revisar porque solo se habla de un tema, pero no se muestra
+
                 continue
 
             dtH = 1.0
@@ -480,6 +517,7 @@ if __name__ == "__main__":
             tid_to_urls_window_corpus = {}
             tid_to_raw_tweet = {}
             ntweets = 0
+
             if t == 4:
                 dfVocTimeWindows = {}
                 t = 0
