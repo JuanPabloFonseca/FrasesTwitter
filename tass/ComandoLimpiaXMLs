@@ -1,2 +1,8 @@
- xmllint --xpath //content general-tweets-train-tagged.xml | sed 's/]]><\/content><content><!\[CDATA\[/\n/g' > OUT_CLEAN
+obtiene el texto del xml
+xmllint --xpath //content general-tweets-train-tagged.xml | sed 's/]]><\/content><content><!\[CDATA\[/\n/g' > OUT_CLEAN
+
+
+
+ordenar tweets json por tiempo
+jq  '. | [.created_at, (.id|tostring), .text] | join("\\\\\\") ' | sort -h
 
