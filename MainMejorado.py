@@ -6,6 +6,7 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn import linear_model
 from sklearn.metrics import precision_recall_fscore_support
 from sklearn.multiclass import OneVsRestClassifier
+from sklearn.metrics import confusion_matrix
 
 import ML_MejoraAlBaseline as ml
 
@@ -87,7 +88,9 @@ def principal():
 
     #segundo intento optimizado:
     PredDF=regLogOptimizada2(RLdf,X_te_df,topicosTest)
-    print(PredDF)
+    print("\nA continuación la matriz de confusión: ")
+    print(calcular_matriz_confusión(topicosTest,PredDF))
+    print("Hay algo muy mal aquí...")
 
     # X = word2vec
     # ml.clasificadores_supervisados(X, topicos)
@@ -113,6 +116,9 @@ def regresionLogistica(RLdf,X_te_df,topicosTest):
     for i in range(1,9):
         pr, rc, fb, su = precision_recall_fscore_support(topicosTest.iloc[:,i], PredDF[i+1], average='binary')
         print("{0}: Precision {1}, Recall {2}, F1 {3}".format(topicosTest.columns[i],pr, rc, fb))
+
+    PredDF.columns = ["cine", "deportes", "economía", "entretenimiento", "fútbol", "literatura",
+                "música", "otros", "política", "tecnología"]
 
     return PredDF
 
@@ -182,10 +188,23 @@ def regLogOptimizada2(RLdf,X_te_df,topicosTest):
         pr, rc, fb, su = precision_recall_fscore_support(topicosTest.iloc[:, i], PredDF.iloc[:,i + 1], average='binary')
         print("{0}: Precision {1}, Recall {2}, F1 {3}".format(topicosTest.columns[i], pr, rc, fb))
 
-
+    PredDF.columns = ["cine","deportes","economía","entretenimiento","fútbol","literatura",
+                                             "música","otros","política","tecnología"]
     return PredDF
 
 
+def calcular_matriz_confusión(topicos_true,topicos_pred):
+    y_true=[]
+    y_pred=[]
+    for i in range(topicos_true.shape[0]):
+        y_true.append(topicos_true.iloc[i,:].argmax())
+        y_pred.append(topicos_pred.iloc[i,:].argmax())#REVISAR ESTO!!
+
+    cm=confusion_matrix(y_true, y_pred, labels=["cine","deportes","economía","entretenimiento","fútbol","literatura",
+                                             "música","otros","política","tecnología"])
+    cm=pd.DataFrame(cm,index=["cin","dep","eco","ent","fút","lit","mús","otr","pol","tec"],
+                     columns=["cin","dep","eco","ent","fút","lit","mús","otr","pol","tec"])
+    return cm
 
 def obtenerTopicosYTweets(str):
     clasificacion = []
