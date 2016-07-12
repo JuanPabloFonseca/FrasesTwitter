@@ -127,6 +127,20 @@ if __name__ == "__main__":
     st = StanfordPOSTagger('spanish-distsim.tagger')
     tweets_cluster = []
 
+    #quitar tweets repetidos
+    total_tweets_repetidos=[]
+    esRepetido=[]
+    for line in file_timeordered_tweets:
+        tw = re.sub("(?<=^|(?<=[^a-zA-Z0-9-_\.]))(#|@)([A-Za-z]+[A-Za-z0-9]+)", ' ', line.split('\\\\\\')[2][:-2])
+                                                 #quita hashtags y mentions
+        tw=li.limpiarTextoTweet(tw, stop_words)
+        if tw not in total_tweets_repetidos:
+            total_tweets_repetidos.append(tw)
+            esRepetido.append(0)
+        else:
+            esRepetido.append(1)
+
+
     # tweets_pos_tagged = []
 
     ## QUITAR TWEETS DUPLICADOS
@@ -149,6 +163,10 @@ if __name__ == "__main__":
         hashtags = re.findall("#[^\s]+", text)
 
         if spam_tweet(text):
+            continue
+
+        #no considera los tweets repetidos
+        if esRepetido[tweettotales-1]:
             continue
 
         if tweet_unixtime_old == -1:

@@ -78,6 +78,9 @@ def principal():
     # X_te_pca=pca.transform(X_te_arr)
     # X_te_df=pd.DataFrame(X_te_pca)
 
+    print("Distribución de tópicos en TRAIN:\n", cuentaTopicos(topicosTrain))
+    print("Distribución de tópicos en TEST:\n",cuentaTopicos(topicosTest))
+
     print("Se va a hacer Regresión Logística")
 
     #primer intento:
@@ -86,11 +89,14 @@ def principal():
     #primer intento optimizado:
     #PDF=regLogOptimizada1(tweetsLimpios,topicosTrain,tweetsLimpiosTest,topicosTest)
 
+
+
+
     #segundo intento optimizado:
     PredDF=regLogOptimizada2(RLdf,X_te_df,topicosTest)
     print("\nA continuación la matriz de confusión: ")
     print(calcular_matriz_confusión(topicosTest,PredDF))
-    print("Hay algo muy mal aquí...")
+    print("NOTA: Dada la distribución de temas, el mal resultado obtenido era esperable.")
 
     # X = word2vec
     # ml.clasificadores_supervisados(X, topicos)
@@ -192,6 +198,17 @@ def regLogOptimizada2(RLdf,X_te_df,topicosTest):
                                              "música","otros","política","tecnología"]
     return PredDF
 
+
+def cuentaTopicos(matBin):
+    resultado=""
+    tot=matBin.shape[0]
+    for i in range(len(matBin.columns)):
+        n=len([j for j in matBin.iloc[:,i] if j==1])
+        por=n*100/tot
+        top=matBin.columns[i]
+        resultado+="Hay %d tweets (%.2f%%) del tópico %s\n" % (n,por,top)
+    resultado+="(la suma no debe dar necesariamente 100%)"
+    return resultado
 
 def calcular_matriz_confusión(topicos_true,topicos_pred):
     y_true=[]
