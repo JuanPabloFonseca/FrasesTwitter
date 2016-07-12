@@ -43,6 +43,9 @@ import LimpiarTweets as li
 import misStopWords
 from nltk.tag import StanfordPOSTagger
 
+
+import scipy.spatial.distance as ssd
+
 # load stop words
 
 
@@ -93,7 +96,16 @@ if __name__ == "__main__":
     file_timeordered_tweets = open('json/pan_timeordered.txt')
 
     # time_window_mins = float(sys.argv[2])
-    time_window_mins = 15.0
+
+    ########### PARAMETROS
+
+    time_window_mins = 30.0
+    n_documentos_maximos = 5
+    factor_frecuencia = 0.01
+    num_ngrams_in_tweet = 3
+
+    ###########
+
     # file_timeordered_news = codecs.open(sys.argv[3], 'r', 'utf-8')
     # fout = codecs.open(sys.argv[3], 'w', 'utf-8')
 
@@ -199,8 +211,6 @@ if __name__ == "__main__":
 
             # first only cluster tweets
 
-            n_documentos_maximos = 5
-            factor_frecuencia = 0.01
 
             max_freq = max(int(len(window_corpus) * factor_frecuencia), n_documentos_maximos)
 
@@ -221,7 +231,7 @@ if __name__ == "__main__":
             for i in range(0, X.shape[0]):
                 # keep sample with size at least 5
                 # estaba en 4 ### PARAMETRO A REVISAR, PIDE QUE EN UN DOCUMENTO APAREZCAN MINIMO 5 NGRAMAS
-                if X[i].sum() > 2:
+                if X[i].sum() >= num_ngrams_in_tweet:
                     Xclean = np.vstack([Xclean, X[i].toarray()])
                     map_index_after_cleaning[Xclean.shape[0] - 2] = i
 
@@ -248,50 +258,51 @@ if __name__ == "__main__":
             boost_entity = {}
 
             print("Indentificando sustantivos con StanfordPOSTagger")
-            for ngram in vocX:
-                ngramas = ngram.split(sep=' ')
-                for tweet in tweets_cluster: # tal vez se pueda filtra un poco mas con map_index_after_cleaning
-
-                    # si los ngramas se encuentran en el tweet,
-                    if len([x for x in ngramas if x in tweet]) == len(ngramas):
-
-
-                        x = [(x, tweet.index(x)) for x in ngramas]
-                        sorted_x = [y[0] for y in sorted(x, key=lambda z: z[1])]
-
-                        # si mantienen el orden
-                        if sorted_x == ngramas: # if ngram in tweet:
-                            tokens = st.tag(tweet) # REMOVES UNDERSCORES FROM TOKENS
-
-                            for term in ngramas:
-                                # si el ngrama es un sustantivo, boost entity
-                                if term in [x[0] for x in tokens if x[1].startswith('n')]:
-                                    if ngram.strip() in boost_entity.keys():
-                                        boost_entity[ngram.strip()] += 2.5
-                                    else:
-                                        boost_entity[ngram.strip()] = 2.5
-                                else:
-                                    if not ngram.strip() in boost_entity.keys() or boost_entity[ngram.strip()] < 2.5:
-                                        boost_entity[ngram.strip()] = 1.0
-                            break
+            # for ngram in vocX:
+            #     ngramas = ngram.split(sep=' ')
+            #     for tweet in tweets_cluster: # tal vez se pueda filtra un poco mas con map_index_after_cleaning
+            #
+            #         # si los ngramas se encuentran en el tweet,
+            #         if len([x for x in ngramas if x in tweet]) == len(ngramas):
+            #
+            #
+            #             x = [(x, tweet.index(x)) for x in ngramas]
+            #             sorted_x = [y[0] for y in sorted(x, key=lambda z: z[1])]
+            #
+            #             # si mantienen el orden
+            #             if sorted_x == ngramas: # if ngram in tweet:
+            #                 tokens = st.tag(tweet) # REMOVES UNDERSCORES FROM TOKENS
+            #
+            #                 for term in ngramas:
+            #                     # si el ngrama es un sustantivo, boost entity
+            #                     if term in [x[0] for x in tokens if x[1].startswith('n')]:
+            #                         if ngram.strip() in boost_entity.keys():
+            #                             boost_entity[ngram.strip()] += 2.5
+            #                         else:
+            #                             boost_entity[ngram.strip()] = 2.5
+            #                     else:
+            #                         if ngram.strip() in boost_entity.keys():
+            #                             boost_entity[ngram.strip()] += 1.0
+            #                         else:
+            #                             boost_entity[ngram.strip()] = 1.0
+            #                 break
 
             print("boosted entities")
             print(boost_entity)
 
 
-            dfX = X.sum(axis=0)
+            dfX = X.sum(axis=0) # suma por columna de ngramas
+
             dfVoc = {}
             wdfVoc = {}
             boosted_wdfVoc = {}
 
             keys = vocX
             vals = dfX
-            repetidas = 0
             for k, v in zip(keys, vals):
                 # condicion y suma agregado al codigo original,
                 if k in dfVoc.keys():
                     dfVoc[k] += v
-                    repetidas += 1
                 else:
                     dfVoc[k] = v
 
@@ -304,6 +315,7 @@ if __name__ == "__main__":
                     dfVocTimeWindows[k] = dfVoc[k]
                     avgdfVoc = 0
 
+                # dar mas peso a los nuevos ngramas, y menos peso si es que ya aparecieron en ventanas anteriores
                 wdfVoc[k] = (dfVoc[k] + 1) / (np.log(avgdfVoc + 1) + 1)
                 try:
                     boosted_wdfVoc[k] = wdfVoc[k] * boost_entity[k]
@@ -313,10 +325,15 @@ if __name__ == "__main__":
             print("sorted wdfVoc*boost_entity:")
             print(sorted(((v, k) for k, v in boosted_wdfVoc.items()), reverse=True))
 
-            distMatrix = pairwise_distances(X_normalized, metric='cosine')
+            # distMatrix = pairwise_distances(X_normalized, metric='cosine') # revisamos y coseno no estaba funcionando como deberia
+
+            distMatrix = pairwise_distances(X_normalized, metric='euclidean')
+
+            # convert the redundant n*n square matrix form into a condensed nC2 array
+            # distArray = ssd.squareform(distMatrix)  # distArray[{n choose 2}-{n-i choose 2} + (j-i-1)] is the distance between points i and j
 
             # cluster tweets
-            print("fastcluster, average, cosine")
+            print("fastcluster, average, eucliden")
             L = fastcluster.linkage(distMatrix, method='average')
 
             dt = 0.5
