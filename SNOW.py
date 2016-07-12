@@ -117,17 +117,15 @@ if __name__ == "__main__":
 
     # tweets_pos_tagged = []
 
+    ## QUITAR TWEETS DUPLICADOS
+
     #	fout.write("\n--------------------start time window tweets--------------------\n")
     # efficient line-by-line read of big files
     for line in file_timeordered_tweets:
         # [tweet_unixtime, tweet_gmttime, tweet_id, text, hashtags, users, urls, media_urls, nfollowers, nfriends] = eval(
         #    line)
 
-        tweettotales += 1
-        if tweettotales % 10 == 0:
-            print(tweettotales)
-
-        contenido = line.split('\\\\\\')
+        contenido = line.split('\\\\\\\\\\\\')
         # datetime.strptime(fecha, '%a %b %d %H:%M:%S %z %Y')
         tweet_gmttime = datetime.strptime(contenido[0][1:], '%a %b %d %H:%M:%S %z %Y') # contenido[0]
         tweet_unixtime = tweet_gmttime.timestamp()
@@ -152,11 +150,13 @@ if __name__ == "__main__":
             features = li.limpiarTextoTweet(text, stop_words)
             tweet_bag = ""
             try:
-                for user in set(users):
-                    tweet_bag += user.lower() + " , "
-                for tag in set(hashtags):
-                    if tag.lower() not in stop_words:
-                        tweet_bag += tag.lower() + " , "
+                #for user in set(users):
+                #    tweet_bag += user.lower() + " , "
+                #for tag in set(hashtags):
+                #    if tag.lower() not in stop_words:
+                #        tweet_bag += tag.lower() + " , "
+
+                # el codigo de arriba solo agrega menciones y hashtags porque el tokenizer las quitaba y en hashtags valida que no sean stop words
                 for feature in features:
                     tweet_bag += feature + " , "
             except:
@@ -199,8 +199,14 @@ if __name__ == "__main__":
 
             # first only cluster tweets
 
+            n_documentos_maximos = 5
+            factor_frecuencia = 0.01
+
+            max_freq = max(int(len(window_corpus) * factor_frecuencia), n_documentos_maximos)
+
+
             vectorizer = CountVectorizer(tokenizer=li.limpiarTextoTweet, binary=True,
-                                         min_df=max(int(len(window_corpus) * 0.0025), 7), ngram_range=(2, 3)) # min_df estaba en 10, habria que hacerlo dinamico
+                                         min_df=max_freq, ngram_range=(2, 3)) # min_df estaba en 10, habria que hacerlo dinamico
 
             try:
                 X = vectorizer.fit_transform(window_corpus)
@@ -214,7 +220,7 @@ if __name__ == "__main__":
             Xclean = np.zeros((1, X.shape[1]))
             for i in range(0, X.shape[0]):
                 # keep sample with size at least 5
-                # estaba en 4 ### PARAMETRO A REVISAR, PIDE QUE EN UN DOCUMENTO APAREZCAN MINIMO 4 NGRAMAS
+                # estaba en 4 ### PARAMETRO A REVISAR, PIDE QUE EN UN DOCUMENTO APAREZCAN MINIMO 5 NGRAMAS
                 if X[i].sum() > 2:
                     Xclean = np.vstack([Xclean, X[i].toarray()])
                     map_index_after_cleaning[Xclean.shape[0] - 2] = i
@@ -244,65 +250,41 @@ if __name__ == "__main__":
             print("Indentificando sustantivos con StanfordPOSTagger")
             for ngram in vocX:
                 ngramas = ngram.split(sep=' ')
-                for tweet in tweets_cluster:
-                    x = [True for x in ngramas if x in tweet] # revisar para mantener el orden
-                    if len(x) == len(ngramas): # if ngram in tweet:
-                        tokens = st.tag(tweet) # REMOVES UNDERSCORES FROM TOKENS
-                        # tweets_pos_tagged.append(tokens)
+                for tweet in tweets_cluster: # tal vez se pueda filtra un poco mas con map_index_after_cleaning
 
-                        for term in ngramas:
-                            if term in [x[0] for x in tokens if x[1].startswith('n')]:
-                                if ngram.strip() in boost_entity.keys():
-                                    boost_entity[ngram.strip()] += 2.5
+                    # si los ngramas se encuentran en el tweet,
+                    if len([x for x in ngramas if x in tweet]) == len(ngramas):
+
+
+                        x = [(x, tweet.index(x)) for x in ngramas]
+                        sorted_x = [y[0] for y in sorted(x, key=lambda z: z[1])]
+
+                        # si mantienen el orden
+                        if sorted_x == ngramas: # if ngram in tweet:
+                            tokens = st.tag(tweet) # REMOVES UNDERSCORES FROM TOKENS
+
+                            for term in ngramas:
+                                # si el ngrama es un sustantivo, boost entity
+                                if term in [x[0] for x in tokens if x[1].startswith('n')]:
+                                    if ngram.strip() in boost_entity.keys():
+                                        boost_entity[ngram.strip()] += 2.5
+                                    else:
+                                        boost_entity[ngram.strip()] = 2.5
                                 else:
-                                    boost_entity[ngram.strip()] = 2.5
-                            else:
-                                if not ngram.strip() in boost_entity.keys() or boost_entity[ngram.strip()] < 2.5:
-                                    boost_entity[ngram.strip()] = 1.0
-                        break
-
-
-            # si el ngrama tiene un noun boost
-
-            # for ngram in vocX:
-            #     for term in ngram.split(sep=' '):
-            #         for pos_tweet in tweets_pos_tagged:
-            #                 if term in [x[0] for x in pos_tweet if x[1].startswith('n')]:
-            #                     boost_entity[ngram.strip()] = 2.5
-            #                 else:
-            #                     boost_entity[ngram.strip()] = 1.0
-            #
-            # # limpiar cluster para siguiente iteracion
-            # tweets_pos_tagged = []
+                                    if not ngram.strip() in boost_entity.keys() or boost_entity[ngram.strip()] < 2.5:
+                                        boost_entity[ngram.strip()] = 1.0
+                            break
 
             print("boosted entities")
             print(boost_entity)
 
-            ### CODIGO ORIGINAL _ TENIA POS TAGGING AFTER CLEANING, modificado por por tagger antes de limpieza y por stanford tagger para español
-            ## pos_tokens = CMUTweetTagger.runtagger_parse([term.upper() for term in vocX])
-            ## print("inicia POS tagger {0}".format(vocX))
-            ## st = StanfordPOSTagger('spanish-distsim.tagger')
-            ## pos_tokens = st.tag([term.upper().split(sep=' ') for term in vocX])
-
-            # CMU (^) ^ <- noun.
-            # Stanford NN noun
-            #for l in pos_tokens:
-            #    term = ''
-            #    #for gr in range(0, len(l)):
-            #    term += l[0].lower() #l[gr][0].lower() + " "
-            #    if str(l[1]).startswith('n'):  # para CMU if "^" in str(l):
-            #        boost_entity[term.strip()] = 2.5
-            #    else:
-            #        boost_entity[term.strip()] = 1.0
 
             dfX = X.sum(axis=0)
-
             dfVoc = {}
             wdfVoc = {}
             boosted_wdfVoc = {}
 
             keys = vocX
-
             vals = dfX
             repetidas = 0
             for k, v in zip(keys, vals):
@@ -312,8 +294,6 @@ if __name__ == "__main__":
                     repetidas += 1
                 else:
                     dfVoc[k] = v
-
-            print(repetidas)
 
             for k in dfVoc:
                 try:
@@ -344,13 +324,16 @@ if __name__ == "__main__":
 
             indL = sch.fcluster(L, dt * distMatrix.max(), 'distance')
 
+            sch.dendrogram(L)
+
             freqTwCl = Counter(indL)
             print("n_clusters:", len(freqTwCl))
             print(freqTwCl)
 
             npindL = np.array(indL)
 
-            freq_th = max(10, int(X.shape[0] * 0.0025))
+            freq_th = max(n_documentos_maximos, int(X.shape[0] * factor_frecuencia))
+
             cluster_score = {}
             for clfreq in freqTwCl.most_common(50):
                 cl = clfreq[0]
@@ -373,7 +356,11 @@ if __name__ == "__main__":
                         pass
                     cluster_score[cl] /= freq
                 else:
-                    break
+                    continue # antes tenia break
+
+
+
+
 
             sorted_clusters = sorted(((v, k) for k, v in cluster_score.items()), reverse=True)
             print("sorted cluster_score:")
@@ -426,7 +413,6 @@ if __name__ == "__main__":
             if(len(distH)<2):
                 print("Otra iteracion, no hay suficientes clusters")
                 # aqui revisar porque solo se habla de un tema, pero no se muestra
-
                 continue
 
             dtH = 1.0
@@ -493,7 +479,7 @@ if __name__ == "__main__":
                             selected_raw_tweets_set.add(raw_tweet.strip())
 
                 try:
-                    print("\n", clean_headline)
+                    print("\n", clean_headline, raw_headline, tids_list)
                 except:
                     pass
 
