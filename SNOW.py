@@ -130,16 +130,6 @@ if __name__ == "__main__":
     #quitar tweets repetidos
     total_tweets_repetidos=[]
     esRepetido=[]
-    for line in file_timeordered_tweets:
-        tw = re.sub("(?<=^|(?<=[^a-zA-Z0-9-_\.]))(#|@)([A-Za-z]+[A-Za-z0-9]+)", ' ', line.split('\\\\\\')[2][:-2])
-                                                 #quita hashtags y mentions
-        tw=li.limpiarTextoTweet(tw, stop_words)
-        if tw not in total_tweets_repetidos:
-            total_tweets_repetidos.append(tw)
-            esRepetido.append(0)
-        else:
-            esRepetido.append(1)
-
 
     # tweets_pos_tagged = []
 
@@ -150,7 +140,6 @@ if __name__ == "__main__":
     for line in file_timeordered_tweets:
         # [tweet_unixtime, tweet_gmttime, tweet_id, text, hashtags, users, urls, media_urls, nfollowers, nfriends] = eval(
         #    line)
-
         contenido = line.split('\\\\\\\\\\\\')
         # datetime.strptime(fecha, '%a %b %d %H:%M:%S %z %Y')
         tweet_gmttime = datetime.strptime(contenido[0][1:], '%a %b %d %H:%M:%S %z %Y') # contenido[0]
@@ -165,9 +154,18 @@ if __name__ == "__main__":
         if spam_tweet(text):
             continue
 
-        #no considera los tweets repetidos
-        if esRepetido[tweettotales-1]:
+
+        tw = re.sub("(?<=^|(?<=[^a-zA-Z0-9-_\.]))(#|@)([A-Za-z]+[A-Za-z0-9]+)", ' ',
+                        line.split('\\\\\\\\\\\\')[2][:-2])
+        # quita hashtags y mentions
+        tw = li.limpiarTextoTweet(tw, stop_words)
+        if tw not in total_tweets_repetidos:
+            total_tweets_repetidos.append(tw)
+            # esRepetido.append(0)
+        else:
+            # esRepetido.append(1)
             continue
+
 
         if tweet_unixtime_old == -1:
             tweet_unixtime_old = tweet_unixtime
@@ -234,7 +232,9 @@ if __name__ == "__main__":
 
 
             vectorizer = CountVectorizer(tokenizer=li.limpiarTextoTweet, binary=True,
-                                         min_df=max_freq, ngram_range=(2, 3)) # min_df estaba en 10, habria que hacerlo dinamico
+                                         min_df=max_freq, ngram_range=(1, 3)) # min_df estaba en 10, habria que hacerlo dinamico
+
+            # en los unigramas dejar solo los hashtags y menciones
 
             try:
                 X = vectorizer.fit_transform(window_corpus)
@@ -359,7 +359,7 @@ if __name__ == "__main__":
 
             indL = sch.fcluster(L, dt * distMatrix.max(), 'distance')
 
-            sch.dendrogram(L)
+            # sch.dendrogram(L)
 
             freqTwCl = Counter(indL)
             print("n_clusters:", len(freqTwCl))
