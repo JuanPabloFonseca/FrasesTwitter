@@ -194,9 +194,8 @@ if __name__ == "__main__":
             # print tweet_bag.decode('utf-8')
 
             # la ultima condicion se ve extraña ¿que hace?
-            if len(users) < 3 and len(hashtags) < 3 and len(features) > 3 and len(tweet_bag.split(",")) > 4 and not str(
-                    features).upper() == str(features):
-                tweet_bag = tweet_bag[:-1]
+            if len(users) < 3 and len(hashtags) < 3 and len(features) > 3: # and len(tweet_bag.split(",")) > 4 and not str(features).upper() == str(features):
+                tweet_bag = tweet_bag[:-1] # quita la ultima comma
                 # fout.write(tweet_bag + "\n\n")
                 window_corpus.append(tweet_bag)
                 tids_window_corpus.append(tweet_id)
@@ -209,11 +208,12 @@ if __name__ == "__main__":
                 text = li.quitarAcentos(text)
                 text = li.quitarEmoticons(text)
 
-                # print(text)
-                sen = li.separaTokensMantienePuntuacion(text)
-                if (len(sen) > 0):
-                    tweets_cluster.append(sen)
-                # print(tokens)
+                ## print(text)
+                #sen = li.separaTokensMantienePuntuacion(text)
+                #if (len(sen) > 0):
+                #    tweets_cluster.append(sen)
+                tweets_cluster.append(text)
+                ## print(tokens)
 
 
                 # print urls_window_corpus
@@ -256,7 +256,7 @@ if __name__ == "__main__":
             Xclean = Xclean[1:, ]
 
             # NO HAY NGRAMAS REPETIDOS EN SUFICIENTES DOCUMENTOS
-            if(len(Xclean)==0):
+            if(len(Xclean)==0 or Xclean.shape[0]<2):
                 print("##########################    Otra iteracion, no hay suficientes n-gramas en documentos")
                 # se requiere que el ngrama (bigrama o trigrama) aparezca al menos en 7 tweets sin razon alguna, habria que revisar ese numero, antes estaba en 10
                 continue
@@ -275,7 +275,7 @@ if __name__ == "__main__":
 
             boost_entity = {}
 
-            print("Indentificando sustantivos con StanfordPOSTagger")
+            # print("Indentificando sustantivos con StanfordPOSTagger")
             # for ngram in vocX:
             #     ngramas = ngram.split(sep=' ')
             #     for tweet in tweets_cluster: # tal vez se pueda filtra un poco mas con map_index_after_cleaning
@@ -310,6 +310,8 @@ if __name__ == "__main__":
 
 
             dfX = X.sum(axis=0) # suma por columna de ngramas
+            ## concatenar valores de ngramas en ventanas
+
 
             dfVoc = {}
             wdfVoc = {}
@@ -348,6 +350,7 @@ if __name__ == "__main__":
             distMatrix = pairwise_distances(X_normalized, metric='euclidean')
 
             # convert the redundant n*n square matrix form into a condensed nC2 array
+            # sch.distance.pdist(X)
             # distArray = ssd.squareform(distMatrix)  # distArray[{n choose 2}-{n-i choose 2} + (j-i-1)] is the distance between points i and j
 
             # cluster tweets
@@ -359,11 +362,22 @@ if __name__ == "__main__":
 
             indL = sch.fcluster(L, dt * distMatrix.max(), 'distance')
 
+            idx_clusts = sorted([(l, k) for k, l in enumerate(indL)], key=lambda x: x[0])
+
+            n_c = 0
+            for x in idx_clusts:
+                if n_c != x[0]:
+                    print("Tweets Cluster {0}".format(x[0]))
+                    n_c = x[0]
+                print(tweets_cluster[map_index_after_cleaning.get(x[1])])
             # sch.dendrogram(L)
 
             freqTwCl = Counter(indL)
             print("n_clusters:", len(freqTwCl))
             print(freqTwCl)
+
+            ## mostrar contenido de clusters
+
 
             npindL = np.array(indL)
 
@@ -428,7 +442,7 @@ if __name__ == "__main__":
                 cluster_to_tids[cl] = tids
 
             ## cluster headlines to avoid topic repetition
-            headline_vectorizer = CountVectorizer(tokenizer=custom_tokenize_text, binary=True, min_df=1,
+            headline_vectorizer = CountVectorizer(tokenizer=li.limpiarTextoTweet, binary=True, min_df=1,
                                                   ngram_range=(1, 1))
 
             # headline_vectorizer = TfidfVectorizer(tokenizer=custom_tokenize_text, min_df=1, ngram_range=(1,1))
@@ -548,3 +562,17 @@ if __name__ == "__main__":
 
     file_timeordered_tweets.close()
 # fout.close()
+
+
+## pensada como opcion en la matriz de distancias
+def LevenshteinDistance(str1, str2):
+  d=dict()
+  for i in range(len(str1)+1):
+     d[i]=dict()
+     d[i][0]=i
+  for i in range(len(str2)+1):
+     d[0][i] = i
+  for i in range(1, len(str1)+1):
+     for j in range(1, len(str2)+1):
+        d[i][j] = min(d[i][j-1]+1, d[i-1][j]+1, d[i-1][j-1]+(not str1[i-1] == str2[j-1]))
+  return d[len(str1)][len(str2)]

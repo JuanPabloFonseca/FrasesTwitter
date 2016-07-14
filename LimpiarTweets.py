@@ -7,7 +7,9 @@ import time
 
 import misStopWords
 
-### Regresa los tweets tokenizados por ejemplo
+### Regresa los tweets tokenizados
+### convierte a minusculas, quita urls, quita acentos, quita stop words
+### por ejemplo
 ### [u'j0sedxx', u'comiendo', u'pan', u'dulc', u'momento', u'v']
 def limpiarTexto(datos):
     patterns = r'[#@][^\s]+|\d+\.\d*|\w+'
