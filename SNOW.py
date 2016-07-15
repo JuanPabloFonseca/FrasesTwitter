@@ -37,6 +37,7 @@ from sklearn import metrics
 import string
 import sys
 import time
+import pandas as pd
 
 
 import LimpiarTweets as li
@@ -238,6 +239,7 @@ if __name__ == "__main__":
 
             try:
                 X = vectorizer.fit_transform(window_corpus)
+
             except:
                 print("No se encontraron suficientes documentos para definir un tema")
                 continue
@@ -354,7 +356,7 @@ if __name__ == "__main__":
             # distArray = ssd.squareform(distMatrix)  # distArray[{n choose 2}-{n-i choose 2} + (j-i-1)] is the distance between points i and j
 
             # cluster tweets
-            print("fastcluster, average, eucliden")
+            print("fastcluster, average, euclidean")
             L = fastcluster.linkage(distMatrix, method='average')
 
             dt = 0.5
@@ -374,7 +376,32 @@ if __name__ == "__main__":
 
             freqTwCl = Counter(indL)
             print("n_clusters:", len(freqTwCl))
-            print(freqTwCl)
+
+
+            #obtención del (los) ngrama(s) más repetido(s) en cada cluster
+            inv_map = {v: k for k, v in vectorizer.vocabulary_.items()}
+            main_ngram_in_cluster=[-1]*len(freqTwCl)
+            for clust in range(len(freqTwCl)):
+                num_ngram = [0] * X.shape[1]
+                cont=0
+                for tweet in range(X.shape[0]):
+                    if indL[tweet] == clust + 1:
+                        cont+=1
+                        for i in range(X.shape[1]):
+                            num_ngram[i]+=X[tweet][i]
+                #print(num_ngram) #muestra las repeticiones de todos los ngramas por cada cluster
+                maximos = (np.argwhere(num_ngram == np.amax(num_ngram))).flatten().tolist()
+                main_ngram_in_cluster[clust]= []
+                for m in range(len(maximos)):
+                    main_ngram_in_cluster[clust].append(inv_map[maximos[m]])
+            for i in range(len(main_ngram_in_cluster)):
+                print("Ngrama(s) más repetido(s) en el cluster ", (i+1),": ",main_ngram_in_cluster[i])
+
+
+
+
+                    ######################
+                    ######################
 
             ## mostrar contenido de clusters
 
