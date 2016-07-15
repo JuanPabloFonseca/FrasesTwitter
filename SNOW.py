@@ -376,7 +376,7 @@ if __name__ == "__main__":
 
             freqTwCl = Counter(indL)
             print("n_clusters:", len(freqTwCl))
-
+            print(freqTwCl)
 
             #obtención del (los) ngrama(s) más repetido(s) en cada cluster
             inv_map = {v: k for k, v in vectorizer.vocabulary_.items()}
