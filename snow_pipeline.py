@@ -138,19 +138,25 @@ for ventana in range(len(ventanas)):
     inv_map = {v: k for k, v in data_transform.named_steps['counts'].vocabulary_.items()}
     main_ngram_in_cluster=[-1]*len(freqTwCl)
     for clust in range(len(freqTwCl)):
-        num_ngram = [0] * data_transform.named_steps['filtrar'].Xclean.shape[1]
+        num_ngram = {} #[0] * data_transform.named_steps['filtrar'].Xclean.shape[1]
         cont=0
         for tweet in range(data_transform.named_steps['filtrar'].Xclean.shape[0]):
             if indL[tweet] == clust+1:
                 cont+=1
                 for i in range(data_transform.named_steps['filtrar'].Xclean.shape[1]):
-                    num_ngram[i]+=data_transform.named_steps['filtrar'].Xclean[tweet][i]
+                    if inv_map[i] in num_ngram.keys():
+                        num_ngram[inv_map[i]]+=data_transform.named_steps['filtrar'].Xclean[tweet][i]
+                    elif data_transform.named_steps['filtrar'].Xclean[tweet][i] > 0:
+                        num_ngram[inv_map[i]]=data_transform.named_steps['filtrar'].Xclean[tweet][i]
         print("{} Tweets en Cluster {}".format(cont,clust+1))
         #print(num_ngram) #muestra las repeticiones de todos los ngramas por cada cluster
-        maximos = (np.argwhere(num_ngram == np.amax(num_ngram))).flatten().tolist()
-        main_ngram_in_cluster[clust]= []
-        for m in range(len(maximos)):
-            main_ngram_in_cluster[clust].append(inv_map[maximos[m]])
+        # maximos = (np.argwhere(num_ngram == np.amax(num_ngram))).flatten().tolist()
+
+        num_ngram = sorted(num_ngram.items(), key=lambda x:x[1], reverse=True)
+
+        main_ngram_in_cluster[clust]= num_ngram
+        # for m in range(len(maximos)):
+        #    main_ngram_in_cluster[clust].append(inv_map[maximos[m]])
     for i in range(len(main_ngram_in_cluster)):
         print("Ngrama(s) más repetido(s) en el cluster ", (i+1),": ",main_ngram_in_cluster[i])
 
