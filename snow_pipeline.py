@@ -15,7 +15,7 @@ import time
 
 ########### PARAMETROS
 
-time_window_mins = 1440.0
+time_window_mins = 14400.0
 n_documentos_maximos = 5
 factor_frecuencia = 0.01
 num_ngrams_in_tweet = 3
@@ -39,7 +39,7 @@ ventanas = []
 ventanas.append([])
 tweets_cluster = []
 tweets_cluster.append([])
-archivo = open('json/pan_timeordered.txt')
+archivo = open('PanCoronaModelojsons/todos_tws.txt')
 start = time.time()
 for line in archivo:
     contenido = line.split('\\\\\\\\\\\\')
