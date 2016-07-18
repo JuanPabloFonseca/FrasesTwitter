@@ -1,19 +1,26 @@
+#!/usr/bin/python3.5
+
 from sklearn.pipeline import Pipeline, FeatureUnion, make_pipeline
 from sklearn.feature_extraction.text import CountVectorizer
 from LimpiarTweets import limpiarTextoTweet, quitarAcentos, quitarEmoticons
 from snow_datatransformer import BinaryToDistanceTransformer, FiltroNGramasTransformer
+from collections import Counter
 from misStopWords import creaStopWords
 from datetime import datetime
+import numpy as np
 import scipy.cluster.hierarchy as sch
 import fastcluster
 import re
+import time
 
 ########### PARAMETROS
 
-time_window_mins = 30.0
+time_window_mins = 1440.0
 n_documentos_maximos = 5
 factor_frecuencia = 0.01
 num_ngrams_in_tweet = 3
+
+### ngramas
 
 ########### LEER ARCHIVO
 
@@ -31,7 +38,9 @@ tweet_unixtime_old = -1
 ventanas = []
 ventanas.append([])
 tweets_cluster = []
+tweets_cluster.append([])
 archivo = open('json/pan_timeordered.txt')
+start = time.time()
 for line in archivo:
     contenido = line.split('\\\\\\\\\\\\')
     tweet_gmttime = datetime.strptime(contenido[0][1:], '%a %b %d %H:%M:%S %z %Y')  # contenido[0]
@@ -69,29 +78,76 @@ for line in archivo:
                 features) > 3:
             tweet_bag = tweet_bag[:-1]
             ventanas[ventana].append(tweet_bag)
+            tweets_cluster[ventana].append(text)
     else:
         # incrementar ventana
         ventana += 1
         ventanas.append([])
+        tweets_cluster.append([])
         tweet_unixtime_old = tweet_unixtime
+end = time.time()
+print("tiempo leer ventanas: {} seg".format(end - start))
 
+print("Ventanas: {}".format(len(ventanas)))
+for ventana in range(len(ventanas)):
+    print("VENTANA {}".format(ventana))
 
-for corpus in ventanas:
     ########### PIPELINE
-    max_freq = max(int(len(corpus) * factor_frecuencia), n_documentos_maximos)
-    data_transform = make_pipeline(
-        CountVectorizer(tokenizer=limpiarTextoTweet, binary=True,
-                        min_df=max_freq, ngram_range=(1, 3)),
-        FiltroNGramasTransformer(numMagico=3),
-        BinaryToDistanceTransformer(_norm='l2',_metric='euclidean')
-    )
+    max_freq = max(int(len(ventanas[ventana]) * factor_frecuencia), n_documentos_maximos)
+    start = time.time()
+    data_transform = Pipeline([('counts', CountVectorizer(tokenizer=limpiarTextoTweet, binary=True,
+                                                          min_df=max_freq, ngram_range=(1, 3))),
+                               ('filtrar', FiltroNGramasTransformer(numMagico=3)),
+                               ('matrizdist', BinaryToDistanceTransformer(_norm='l2',_metric='euclidean'))])
 
     ######### CLUSTERING
-    datos = data_transform.fit_transform(corpus)
-    L = fastcluster.linkage(datos, method='average')
+    end = time.time()
+    print("tiempo pipeline: {} seg".format(end - start))
+
+    start = time.time()
+    X = data_transform.fit_transform(ventanas[ventana])
+
+    print("Tweets ventana vs limpios {} {}".format(len(ventanas[ventana]), X.shape[0]))
+
+    L = fastcluster.linkage(X, method='average')
     dt = 0.5
     print("hclust cut threshold:", dt)
-    indL = sch.fcluster(L, dt * datos.max(), 'distance')
+    indL = sch.fcluster(L, dt * X.max(), 'distance')
+    freqTwCl = Counter(indL)
+    end = time.time()
+    print("tiempo clustering: {} seg".format(end - start))
+
+
+    idx_clusts = sorted([(l, k) for k, l in enumerate(indL)], key=lambda x: x[0])
+
+    #n_c = 0
+    #for x in idx_clusts:
+    #    if n_c != x[0]:
+    #        print("Tweets Cluster {0}".format(x[0]))
+    #        n_c = x[0]
+    #    print(tweets_cluster[ventana][data_transform.named_steps['filtrar'].map_index_after_cleaning.get(x[1])])
+
+
+    #obtención del (los) ngrama(s) más repetido(s) en cada cluster
+    inv_map = {v: k for k, v in data_transform.named_steps['counts'].vocabulary_.items()}
+    main_ngram_in_cluster=[-1]*len(freqTwCl)
+    for clust in range(len(freqTwCl)):
+        num_ngram = [0] * data_transform.named_steps['filtrar'].Xclean.shape[1]
+        cont=0
+        for tweet in range(data_transform.named_steps['filtrar'].Xclean.shape[0]):
+            if indL[tweet] == clust + 1:
+                cont+=1
+                for i in range(data_transform.named_steps['filtrar'].Xclean.shape[1]):
+                    num_ngram[i]+=data_transform.named_steps['filtrar'].Xclean[tweet][i]
+        print("{} Tweets en Cluster {}".format(cont,clust))
+        #print(num_ngram) #muestra las repeticiones de todos los ngramas por cada cluster
+        maximos = (np.argwhere(num_ngram == np.amax(num_ngram))).flatten().tolist()
+        main_ngram_in_cluster[clust]= []
+        for m in range(len(maximos)):
+            main_ngram_in_cluster[clust].append(inv_map[maximos[m]])
+    for i in range(len(main_ngram_in_cluster)):
+        print("Ngrama(s) más repetido(s) en el cluster ", (i+1),": ",main_ngram_in_cluster[i])
+
     sch.dendrogram(L)
 
 # idx_clusts = sorted([(l, k) for k, l in enumerate(indL)], key=lambda x: x[0])

@@ -26,13 +26,15 @@ class FiltroNGramasTransformer(TransformerMixin):
         self.map_index_after_cleaning = {}
 
     def transform(self, X, y=None, **fit_params):
-        Xclean = np.zeros((1, X.shape[1]))
+        self.Xclean = np.zeros((1, X.shape[1]))
         for i in range(0, X.shape[0]):
             # keep sample with size at least numMagico ngramas
             if X[i].sum() >= self.numMagico:
-                Xclean = np.vstack([Xclean, X[i].toarray()])
-                self.map_index_after_cleaning[Xclean.shape[0] - 2] = i
-        return Xclean
+                self.Xclean = np.vstack([self.Xclean, X[i].toarray()])
+                self.map_index_after_cleaning[self.Xclean.shape[0] - 2] = i
+
+        self.Xclean = self.Xclean[1:, ]
+        return self.Xclean
 
     def fit(self, X, y=None, **fit_params):
         return self

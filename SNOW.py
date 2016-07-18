@@ -42,7 +42,7 @@ import pandas as pd
 
 import LimpiarTweets as li
 import misStopWords
-from nltk.tag import StanfordPOSTagger
+# from nltk.tag import StanfordPOSTagger
 
 
 import scipy.spatial.distance as ssd
@@ -125,7 +125,7 @@ if __name__ == "__main__":
     ntweets = 0
     tweettotales = 0
 
-    st = StanfordPOSTagger('spanish-distsim.tagger')
+    # st = StanfordPOSTagger('spanish-distsim.tagger')
     tweets_cluster = []
 
     #quitar tweets repetidos
@@ -582,6 +582,8 @@ if __name__ == "__main__":
             tid_to_urls_window_corpus = {}
             tid_to_raw_tweet = {}
             ntweets = 0
+
+            tweets_cluster = []
 
             if t == 4:
                 dfVocTimeWindows = {}
