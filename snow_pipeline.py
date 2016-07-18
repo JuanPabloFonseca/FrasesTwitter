@@ -94,25 +94,31 @@ for ventana in range(len(ventanas)):
 
     ########### PIPELINE
     max_freq = max(int(len(ventanas[ventana]) * factor_frecuencia), n_documentos_maximos)
-    start = time.time()
+
     data_transform = Pipeline([('counts', CountVectorizer(tokenizer=limpiarTextoTweet, binary=True,
                                                           min_df=max_freq, ngram_range=(1, 3))),
                                ('filtrar', FiltroNGramasTransformer(numMagico=3)),
                                ('matrizdist', BinaryToDistanceTransformer(_norm='l2',_metric='euclidean'))])
 
     ######### CLUSTERING
-    end = time.time()
-    print("tiempo pipeline: {} seg".format(end - start))
+
 
     start = time.time()
     X = data_transform.fit_transform(ventanas[ventana])
-
+    end = time.time()
+    print("tiempo pipeline: {} seg".format(end - start))
     print("Tweets ventana vs limpios {} {}".format(len(ventanas[ventana]), X.shape[0]))
 
+    start = time.time()
     L = fastcluster.linkage(X, method='average')
-    dt = 0.5
-    print("hclust cut threshold:", dt)
-    indL = sch.fcluster(L, dt * X.max(), 'distance')
+    # dt = 0.5
+    T = sch.to_tree(L)
+    print("hclust cut threshold:", T.dist * 0.5)
+    indL = sch.fcluster(L, T.dist * 0.5, 'distance')
+
+    #indL = sch.cut_tree(L,10) # cortar el dendograma en 10 clusters
+    #indL = [x[0] for x in indL]
+
     freqTwCl = Counter(indL)
     end = time.time()
     print("tiempo clustering: {} seg".format(end - start))
@@ -135,11 +141,11 @@ for ventana in range(len(ventanas)):
         num_ngram = [0] * data_transform.named_steps['filtrar'].Xclean.shape[1]
         cont=0
         for tweet in range(data_transform.named_steps['filtrar'].Xclean.shape[0]):
-            if indL[tweet] == clust + 1:
+            if indL[tweet] == clust+1:
                 cont+=1
                 for i in range(data_transform.named_steps['filtrar'].Xclean.shape[1]):
                     num_ngram[i]+=data_transform.named_steps['filtrar'].Xclean[tweet][i]
-        print("{} Tweets en Cluster {}".format(cont,clust))
+        print("{} Tweets en Cluster {}".format(cont,clust+1))
         #print(num_ngram) #muestra las repeticiones de todos los ngramas por cada cluster
         maximos = (np.argwhere(num_ngram == np.amax(num_ngram))).flatten().tolist()
         main_ngram_in_cluster[clust]= []
@@ -148,6 +154,6 @@ for ventana in range(len(ventanas)):
     for i in range(len(main_ngram_in_cluster)):
         print("Ngrama(s) más repetido(s) en el cluster ", (i+1),": ",main_ngram_in_cluster[i])
 
-    sch.dendrogram(L)
+    # sch.dendrogram(L)
 
 # idx_clusts = sorted([(l, k) for k, l in enumerate(indL)], key=lambda x: x[0])
