@@ -3,14 +3,24 @@
 # ejecucion 
 # perl -Mutf8 -CS script.pl > TASSTrain.txt
 use XML::XPath;
+use Date::Parse;
+use Date::Format;
 
-my $file = 'tass_2015_tagged/general-tweets-test1k-tagged.xml'; 
+my $file = 'tass_2015/general-tweets-test.xml'; 
 # general-tweets-train-tagged.xml
 # general-tweets-test1k-tagged.xml
 my $xp = XML::XPath->new(filename => $file);
 my $count = 1;
 foreach my $entry ($xp->find('//tweet')->get_nodelist){
-    print $entry->find('date'); 
+    print "\"";
+    my $deit = $entry->find('date'); 
+    $time = str2time($deit);
+    #$time = $class->parse_datetime($deit);
+    #$string = $class->format_datetime($time); # Format as GMT ASCII time
+    #print $time;
+    #print ctime(time)
+    print time2str("%a %b %e %T +0000 %Y", $time);
+    #print time2str("%C",$time);
     print "\\\\\\\\\\\\";
     print $entry->find('tweetid');
     print "\\\\\\\\\\\\";
@@ -21,7 +31,6 @@ foreach my $entry ($xp->find('//tweet')->get_nodelist){
     foreach my $topic ($entry->find('topics/topic')->get_nodelist){
 	print $topic->string_value . ",";
     }
-    print "\n";	
-
+    print "\"\n";
     $count++;
 }
