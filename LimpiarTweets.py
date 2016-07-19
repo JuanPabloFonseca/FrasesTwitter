@@ -100,6 +100,8 @@ def limpiarTextoTweet(tweet, stop_words=[]):
 
     raw = quitarAcentos(raw)
 
+    raw = quitarEmoticons(raw)
+
     # tokenizar mention
     # p = re.compile("@[A-Za-z0-9_]+")
     # raw = p.sub('mention', raw)
@@ -154,20 +156,20 @@ def separaTokensMantienePuntuacion(texto):
 
 
 def quitarAcentos(text):
-    text = re.sub("á", 'a', text)
-    text = re.sub("é", 'e', text)
-    text = re.sub("í", 'i', text)
-    text = re.sub("ó", 'o', text)
-    text = re.sub("ú", 'u', text)
+    text = re.sub(r"à|á", 'a', text)
+    text = re.sub(r"è|é", 'e', text)
+    text = re.sub(r"ì|í", 'i', text)
+    text = re.sub(r"ò|ó", 'o', text)
+    text = re.sub(r"ù|ú", 'u', text)
     return text
 
 def quitarEmoticons(text):
 
-    #try:
-    #    # UCS-4
-    #    highpoints = re.sub('[U00010000-U0010ffff]', '', text)
-    #except re.error:
-    #    # UCS-2
-    #    highpoints = re.sub('[uD800-uDBFF][uDC00-uDFFF]', '', text)
+    bien = ''
+    for x in text:
+        if ord(x)<=256:
+            bien += x
 
-    return text
+    bien = re.sub(r"&gt;|&lt;(3+)?|\\n|(:|;)(\)|\(|D|\*)|&amp;|\*-\*|(x|X)(d|D)", ' ', bien)
+
+    return bien
