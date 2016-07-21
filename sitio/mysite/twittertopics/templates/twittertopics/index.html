@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Búsqueda de tópicos en tweets</title>
+</head>
+<body>
+    <div id="archivo">
+        <p>Identificar tópicos principales</p>
+        <form accept-charset="utf-8" enctype="multipart/form-data" action="/twittertopics/" method="post">
+            {% csrf_token %}
+            <input type="file" name="archivo_tweets">
+            <input type="submit" value="Submit">
+        </form>
+    </div>
+    {% if topics %}
+    <div id="topicos">
+        <p>Se encontraron los siguientes tópicos: </p>
+        <ul>
+        {% for t in topics %}
+            <li>
+                { t }
+            </li>
+        {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+</body>
+</html>
+
+
