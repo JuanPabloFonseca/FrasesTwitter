@@ -20,7 +20,7 @@ class Topics:
                         factor_frecuencia=factor_frecuencia, num_ngrams_in_tweet=num_ngrams_in_tweet, minimo_usuarios=minimo_usuarios,
                         minimo_hashtags=minimo_hashtags, ngrama_minimo=ngrama_minimo, ngrama_maximo=ngrama_maximo)
 
-        
+
         return ngramas
 
 # Create your models here.

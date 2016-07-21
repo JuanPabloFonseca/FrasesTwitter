@@ -392,8 +392,9 @@ if __name__ == "__main__":
                         cont+=1
                         for i in range(X.shape[1]):
                             num_ngram[i]+=X[tweet][i]
-                #print(num_ngram) #muestra las repeticiones de todos los ngramas por cada cluster
+                print(num_ngram) #muestra las repeticiones de todos los ngramas por cada cluster
                 maximos = (np.argwhere(num_ngram == np.amax(num_ngram))).flatten().tolist()
+
                 main_ngram_in_cluster[clust]= []
                 for m in range(len(maximos)):
                     main_ngram_in_cluster[clust].append(inv_map[maximos[m]])
