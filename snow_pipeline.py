@@ -9,6 +9,7 @@ from misStopWords import creaStopWords
 from datetime import datetime
 import numpy as np
 import scipy.cluster.hierarchy as sch
+from scipy.spatial import distance
 import fastcluster
 import re
 import time
@@ -29,33 +30,57 @@ def mostrarNTweetsCluster(N, data_transform, indL):
             print(tweets_cluster[ventana][data_transform.named_steps['filtrar'].map_index_after_cleaning.get(x[1])])
 
 def mostrarNGramas(data_transform):
-    #obtención del (los) ngrama(s) más repetido(s) en cada cluster
-    inv_map = {v: k for k, v in data_transform.named_steps['counts'].vocabulary_.items()}
-    main_ngram_in_cluster=[-1]*len(freqTwCl)
+    Xclean = data_transform.named_steps['filtrar'].Xclean
+
+    inv_map = data_transform.named_steps['filtrar'].inv_map
+
+    # obtención del (los) ngrama(s) MÁS repetido(s) en cada cluster
+    print(inv_map)
+    main_ngram_in_cluster = [-1] * len(freqTwCl)
+    centroide = []
     for clust in range(len(freqTwCl)):
-        num_ngram = {} #[0] * data_transform.named_steps['filtrar'].Xclean.shape[1]
-        cont=0
+        num_ngram = {}  # [0] * data_transform.named_steps['filtrar'].Xclean.shape[1]
+        centroide.append([0] * data_transform.named_steps['filtrar'].Xclean.shape[1])
+        cont = 0
+        tweets_del_cluster = []
         for tweet in range(data_transform.named_steps['filtrar'].Xclean.shape[0]):
-            if indL[tweet] == clust+1:
-                cont+=1
+            if indL[tweet] == clust + 1:
+                tweets_del_cluster.append(tweet)
+                cont += 1
                 for i in range(data_transform.named_steps['filtrar'].Xclean.shape[1]):
+                    centroide[clust][i] += data_transform.named_steps['filtrar'].Xclean[tweet][i]
                     if inv_map[i] in num_ngram.keys():
-                        num_ngram[inv_map[i]]+=data_transform.named_steps['filtrar'].Xclean[tweet][i]
+                        num_ngram[inv_map[i]] += data_transform.named_steps['filtrar'].Xclean[tweet][i]
                     elif data_transform.named_steps['filtrar'].Xclean[tweet][i] > 0:
-                        num_ngram[inv_map[i]]=data_transform.named_steps['filtrar'].Xclean[tweet][i]
-        print("{} Tweets en Cluster {}".format(cont,clust+1))
-        #print(num_ngram) #muestra las repeticiones de todos los ngramas por cada cluster
+                        num_ngram[inv_map[i]] = data_transform.named_steps['filtrar'].Xclean[tweet][i]
+        print("\n{} Tweets en Cluster {}".format(cont, clust + 1))
+
+        centroide[clust] = [(x / cont) for x in centroide[clust]]
+        cercano = -1
+        distancia = 10000000
+        print(tweets_del_cluster)
+        for k in range(len(tweets_del_cluster)):
+            actual = tweets_del_cluster[k]
+            distActual = distance.euclidean(centroide[clust], data_transform.named_steps['filtrar'].Xclean[actual, :])
+            if distActual < distancia:
+                cercano = actual
+                distancia = distActual
+
+        # print("CENTROIDE {}".format(centroide[clust]))
+        print("Tweet más representativo: {}".format(
+            tweets_cluster[ventana][data_transform.named_steps['filtrar'].map_index_after_cleaning.get(cercano)]))
+
         # maximos = (np.argwhere(num_ngram == np.amax(num_ngram))).flatten().tolist()
 
-        num_ngram = sorted(num_ngram.items(), key=lambda x:x[1], reverse=True)
 
-        main_ngram_in_cluster[clust]= num_ngram
+        num_ngram = sorted(num_ngram.items(), key=lambda x: x[1], reverse=True)
+
+        main_ngram_in_cluster[clust] = num_ngram
         # for m in range(len(maximos)):
         #    main_ngram_in_cluster[clust].append(inv_map[maximos[m]])
     for i in range(len(main_ngram_in_cluster)):
-        print("Ngrama(s) más repetido(s) en el cluster ", (i+1),": ",main_ngram_in_cluster[i])
+        print("Ngrama(s) más repetido(s) en el cluster ", (i + 1), ": ", main_ngram_in_cluster[i])
 
-    # sch.dendrogram(L)
 
 if __name__ == "__main__":
 
@@ -145,29 +170,30 @@ if __name__ == "__main__":
         ########### PIPELINE
         max_freq = max(int(len(ventanas[ventana]) * factor_frecuencia), n_documentos_maximos)
 
-        data_transform = Pipeline([('counts', CountVectorizer(tokenizer=limpiarTextoTweet, # binary=True,
-                                                              min_df=max_freq, ngram_range=(ngrama_minimo, ngrama_maximo))),
-                                   ('filtrar', FiltroNGramasTransformer(numMagico=num_ngrams_in_tweet)),
-                                   ('matrizdist', BinaryToDistanceTransformer(_norm='l2',_metric='euclidean'))])
+    vect = CountVectorizer(tokenizer=limpiarTextoTweet, binary=True, min_df=max_freq, ngram_range=(1, 3))
+
+    data_transform = Pipeline([('counts', vect),
+                               ('filtrar', FiltroNGramasTransformer(numMagico=3,vectorizer=vect)),
+                               ('matrizdist', BinaryToDistanceTransformer(_norm='l2',_metric='euclidean'))])
 
 
-        ######### CLUSTERING
+    ######### CLUSTERING
 
-        start = time.time()
-        X = data_transform.fit_transform(ventanas[ventana])
-        end = time.time()
-        print("tiempo pipeline: {} seg".format(end - start))
-        print("Tweets ventana {} vs limpios {}".format(len(ventanas[ventana]), X.shape[0]))
+    start = time.time()
+    X = data_transform.fit_transform(ventanas[ventana])
+    end = time.time()
+    print("tiempo pipeline: {} seg".format(end - start))
+    print("Tweets ventana {} vs limpios {}".format(len(ventanas[ventana]), X.shape[0]))
 
-        dt = 0.5
-        print("AVERAGE")
-        start = time.time()
-        L = fastcluster.linkage(X, method='average')
-        T = sch.to_tree(L)
-        print("hclust cut threshold:", T.dist * dt)
-        indL = sch.fcluster(L, T.dist * dt, 'distance')
-        freqTwCl = Counter(indL)
-        end = time.time()
-        print("tiempo clustering: {} seg".format(end - start))
-        mostrarNTweetsCluster(3, data_transform, indL)
-        mostrarNGramas(data_transform)
+    dt = 0.5
+    print("AVERAGE")
+    start = time.time()
+    L = fastcluster.linkage(X, method='average')
+    T = sch.to_tree(L)
+    print("hclust cut threshold:", T.dist * dt)
+    indL = sch.fcluster(L, T.dist * dt, 'distance')
+    freqTwCl = Counter(indL)
+    end = time.time()
+    print("tiempo clustering: {} seg".format(end - start))
+    mostrarNTweetsCluster(3, data_transform, indL)
+    mostrarNGramas(data_transform)
