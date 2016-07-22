@@ -59,7 +59,7 @@ class pipeline:
             # print("CENTROIDE {}".format(centroide[clust]))
             # print("Num. Tweets {}, tweet más representativo: {} y ngramas {}".format( cont,
             #    tweets_cluster[ventana][data_transform.named_steps['filtrar'].map_index_after_cleaning.get(cercano)]), num_ngram)
-        return main_ngram_in_cluster
+        return [main_ngram_in_cluster,centroide]
 
 
     def obtenerModelo(self, archivo, time_window_mins, n_documentos_maximos, factor_frecuencia, num_ngrams_in_tweet, minimo_usuarios, minimo_hashtags, ngrama_minimo, ngrama_maximo):
@@ -172,4 +172,55 @@ class pipeline:
         # print("tiempo clustering: {} seg".format(end - start))
 
         # mostrarNTweetsCluster(3, data_transform, indL)
-        return self.mostrarNGramas(Xclean, inv_map, map_index_after_cleaning,freqTwCl, indL, tweets_cluster,0)
+        mng=self.mostrarNGramas(Xclean, inv_map, map_index_after_cleaning,freqTwCl, indL, tweets_cluster,0)
+        #mng[0] es main_ngram_in_cluster, tiene info de # tweets por clust, tweet + repr. por clust, ngramas del clust
+        #mng[1] son los centroides de los clusters
+
+
+        # DADO UN TWEET NUEVO, A QUÉ CLUSTER PERTENECE (3 ejemplos de "pan" a continuación):
+        ##############################################
+        # cuenta=[mng[0][cl][0] for cl in range(len(mng[0]))] # rescato el num de tweets por cluster
+        #
+        # tuit = "La alianza pan prd se está llevando a cabo."
+        # c = clusterDelTweet(tuit, mng[1],cuenta,inv_map)
+        # print("El nuevo tweet {} pertenece al cluster {}.\n".format(tuit, c))
+        #
+        # tuit = "Se está construyendo un nuevo modelo económico que mejore al país."
+        # c = clusterDelTweet(tuit, mng[1],cuenta,inv_map)
+        # print("El nuevo tweet {} pertenece al cluster {}.\n".format(tuit, c))
+        #
+        # tuit = "Ya listos para la copa corona mx?"
+        # c = clusterDelTweet(tuit, mng[1],cuenta,inv_map)
+        # print("El nuevo tweet {} pertenece al cluster {}.\n".format(tuit, c))
+        ##############################################
+
+
+        return mng[0] #regresa main_ngram_in_cluster
+
+
+
+    def clusterDelTweet(tw,centroides,cnt,inv_map):
+        stop_words = creaStopWords()
+        tw = limpiarTextoTweet(tw, stop_words)
+        vectortweet=[0]*len(inv_map)
+        for ng in range(len(inv_map)):
+            nglim=re.sub('[@#]', '',inv_map[ng])
+            ngsp=nglim.split()
+            for p in range(len(tw)-len(ngsp)+1):
+                pal=[re.sub('[@#]', '',tw[p+pa]) for pa in range(len(ngsp))]
+                if set(ngsp) == set(pal):
+                    vectortweet[ng]+=1
+
+
+        clusterBasura = np.argmax(cnt)
+        cercano = -1
+        dist = 1000000000
+        for c in range(len(centroides)):
+            if c != clusterBasura:
+                distActual = distance.euclidean(centroides[c], vectortweet)
+                if (distActual < dist):
+                    dist = distActual
+                    cercano = c
+
+        #regresa el número de cluster al que el tweet "pertenece" (recordando que la numeración empieza desde 1)
+        return (cercano+1)

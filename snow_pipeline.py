@@ -35,7 +35,7 @@ def mostrarNGramas(data_transform):
     inv_map = data_transform.named_steps['filtrar'].inv_map
 
     # obtención del (los) ngrama(s) MÁS repetido(s) en cada cluster
-    print(inv_map)
+    #print(inv_map)
     main_ngram_in_cluster = [-1] * len(freqTwCl)
     centroide = []
     for clust in range(len(freqTwCl)):
@@ -58,7 +58,7 @@ def mostrarNGramas(data_transform):
         centroide[clust] = [(x / cont) for x in centroide[clust]]
         cercano = -1
         distancia = 10000000
-        print(tweets_del_cluster)
+        #print(tweets_del_cluster)
         for k in range(len(tweets_del_cluster)):
             actual = tweets_del_cluster[k]
             distActual = distance.euclidean(centroide[clust], data_transform.named_steps['filtrar'].Xclean[actual, :])
@@ -70,19 +70,15 @@ def mostrarNGramas(data_transform):
 
 
         num_ngram = sorted(num_ngram.items(), key=lambda x: x[1], reverse=True)
-        main_ngram_in_cluster[clust] = num_ngram
+        main_ngram_in_cluster[clust] = [cont, tweets_cluster[ventana][data_transform.named_steps['filtrar'].map_index_after_cleaning.get(cercano)], num_ngram]
         # print("CENTROIDE {}".format(centroide[clust]))
         print("Num. Tweets {}, tweet más representativo: {} y ngramas {}".format( cont,
             tweets_cluster[ventana][data_transform.named_steps['filtrar'].map_index_after_cleaning.get(cercano)]), num_ngram)
 
-        # maximos = (np.argwhere(num_ngram == np.amax(num_ngram))).flatten().tolist()
 
+    return [main_ngram_in_cluster,centroide]
 
-
-
-    return centroide
-
-def clusterDelTweet(tw,centroides):
+def clusterDelTweet(tw,centroides,cnt):
     tw = limpiarTextoTweet(tw, stop_words)
     inv_map = data_transform.named_steps['filtrar'].inv_map
     vectortweet=[0]*len(inv_map)
@@ -94,13 +90,15 @@ def clusterDelTweet(tw,centroides):
             if set(ngsp) == set(pal):
                 vectortweet[ng]+=1
 
-    cercano=0
-    dist=distance.euclidean(centroides[cercano],vectortweet)
-    for c in range(1,len(centroides)):
-        distActual=distance.euclidean(centroides[c],vectortweet)
-        if(distActual<dist):
-            dist=distActual
-            cercano=c
+    clusterBasura=np.argmax(cnt)
+    cercano=-1
+    dist=1000000000
+    for c in range(len(centroides)):
+        if c != clusterBasura:
+            distActual=distance.euclidean(centroides[c],vectortweet)
+            if(distActual<dist):
+                dist=distActual
+                cercano=c
 
     #regresa el número de cluster al que el tweet "pertenece" (recordando que la numeración empieza desde 1)
     return (cercano+1)
@@ -139,7 +137,7 @@ if __name__ == "__main__":
     ventanas.append([])
     tweets_cluster = []
     tweets_cluster.append([])
-    archivo = open('PanCoronaModelojsons/todos_tws.txt')
+    archivo = open('PanCoronaModelojsons/PAN_TWS')
     start = time.time()
     for line in archivo:
         contenido = line.split('\\\\\\\\\\\\')
@@ -195,7 +193,6 @@ if __name__ == "__main__":
         ########### PIPELINE
         max_freq = max(int(len(ventanas[ventana]) * factor_frecuencia), n_documentos_maximos)
 
-
         vect = CountVectorizer(tokenizer=limpiarTextoTweet, binary=True, min_df=max_freq, ngram_range=(1, 3))
 
         data_transform = Pipeline([('counts', vect),
@@ -211,32 +208,36 @@ if __name__ == "__main__":
         print("tiempo pipeline: {} seg".format(end - start))
         print("Tweets ventana {} vs limpios {}".format(len(ventanas[ventana]), X.shape[0]))
 
-    dt = 0.5
-    print("AVERAGE")
-    start = time.time()
-    L = fastcluster.linkage(X, method='average')
-    T = sch.to_tree(L)
-    print("hclust cut threshold:", T.dist * dt)
-    indL = sch.fcluster(L, T.dist * dt, 'distance')
-    freqTwCl = Counter(indL)
-    end = time.time()
-    print("tiempo clustering: {} seg".format(end - start))
-    mostrarNTweetsCluster(3, data_transform, indL)
-    centroides=mostrarNGramas(data_transform) #muestra ngramas más repetidos por cluster, y regresa los centroides de cada cluster
+        dt = 0.5
+        print("AVERAGE")
+        start = time.time()
+        L = fastcluster.linkage(X, method='average')
+        T = sch.to_tree(L)
+        print("hclust cut threshold:", T.dist * dt)
+        indL = sch.fcluster(L, T.dist * dt, 'distance')
+        freqTwCl = Counter(indL)
+        end = time.time()
+        print("tiempo clustering: {} seg".format(end - start))
+        mostrarNTweetsCluster(3, data_transform, indL)
+        mng=mostrarNGramas(data_transform) #muestra ngramas más repetidos por cluster
+        # mng[0] es main_ngram_in_cluster, tiene info de # tweets por clust, tweet + repr. por clust, ngramas del clust
+        # mng[1] son los centroides de los clusters
+        centroides=mng[1]
+        cuenta=[mng[0][cl][0] for cl in range(len(mng[0]))] # rescato el num de tweets por cluster
 
-    #ver a qué cluster pertenece un nuevo tweet (ejemplo a continuación):
-    tuit = "Me ha gustado un video de @youtube." #este no lo clasifica bien, sino que lo clasifica al cluster basura. SOLUCIÓN: no considerar al cluster basura.
-    c=clusterDelTweet(tuit,centroides)
-    print("El nuevo tweet {} pertenece al cluster {}.\n".format(tuit,c))
+        #ver a qué cluster pertenece un nuevo tweet (ejemplo a continuación):
+        tuit = "Me ha gustado un video de @youtube." #este no lo clasifica bien, sino que lo clasifica al cluster basura. SOLUCIÓN: no considerar al cluster basura.
+        c = clusterDelTweet(tuit, centroides, cuenta)
+        print("El nuevo tweet {} pertenece al cluster {}.\n".format(tuit,c))
 
-    tuit = "La alianza pan prd se está llevando a cabo."
-    c = clusterDelTweet(tuit, centroides)
-    print("El nuevo tweet {} pertenece al cluster {}.\n".format(tuit, c))
+        tuit = "La alianza pan prd se está llevando a cabo."
+        c = clusterDelTweet(tuit, centroides, cuenta)
+        print("El nuevo tweet {} pertenece al cluster {}.\n".format(tuit, c))
 
-    tuit = "Se está construyendo un nuevo modelo económico que mejore al país."
-    c = clusterDelTweet(tuit, centroides)
-    print("El nuevo tweet {} pertenece al cluster {}.\n".format(tuit, c))
+        tuit = "Se está construyendo un nuevo modelo económico que mejore al país."
+        c = clusterDelTweet(tuit, centroides, cuenta)
+        print("El nuevo tweet {} pertenece al cluster {}.\n".format(tuit, c))
 
-    tuit = "Ya listos para la copa corona mx?"
-    c = clusterDelTweet(tuit, centroides)
-    print("El nuevo tweet {} pertenece al cluster {}.\n".format(tuit, c))
+        tuit = "Ya listos para la copa corona mx?"
+        c = clusterDelTweet(tuit, centroides, cuenta)
+        print("El nuevo tweet {} pertenece al cluster {}.\n".format(tuit, c))
