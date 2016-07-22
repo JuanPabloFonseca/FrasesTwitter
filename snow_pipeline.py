@@ -53,7 +53,7 @@ def mostrarNGramas(data_transform):
                         num_ngram[inv_map[i]] += data_transform.named_steps['filtrar'].Xclean[tweet][i]
                     elif data_transform.named_steps['filtrar'].Xclean[tweet][i] > 0:
                         num_ngram[inv_map[i]] = data_transform.named_steps['filtrar'].Xclean[tweet][i]
-        print("\n{} Tweets en Cluster {}".format(cont, clust + 1))
+
 
         centroide[clust] = [(x / cont) for x in centroide[clust]]
         cercano = -1
@@ -66,21 +66,19 @@ def mostrarNGramas(data_transform):
                 cercano = actual
                 distancia = distActual
 
+        print("\n{} Tweets en Cluster {}".format(cont, clust + 1))
+
+
+        num_ngram = sorted(num_ngram.items(), key=lambda x: x[1], reverse=True)
+        main_ngram_in_cluster[clust] = num_ngram
         # print("CENTROIDE {}".format(centroide[clust]))
-        print("Tweet más representativo: {}".format(
-            tweets_cluster[ventana][data_transform.named_steps['filtrar'].map_index_after_cleaning.get(cercano)]))
+        print("Num. Tweets {}, tweet más representativo: {} y ngramas {}".format( cont,
+            tweets_cluster[ventana][data_transform.named_steps['filtrar'].map_index_after_cleaning.get(cercano)]), num_ngram)
 
         # maximos = (np.argwhere(num_ngram == np.amax(num_ngram))).flatten().tolist()
 
 
-        num_ngram = sorted(num_ngram.items(), key=lambda x: x[1], reverse=True)
 
-        main_ngram_in_cluster[clust] = num_ngram
-        # for m in range(len(maximos)):
-        #    main_ngram_in_cluster[clust].append(inv_map[maximos[m]])
-
-    for i in range(len(main_ngram_in_cluster)):
-        print("Ngrama(s) más repetido(s) en el cluster ", (i + 1), ": ", main_ngram_in_cluster[i])
 
 
 if __name__ == "__main__":

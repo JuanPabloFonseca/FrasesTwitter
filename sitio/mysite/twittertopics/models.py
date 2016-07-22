@@ -1,27 +1,34 @@
 from django.db import models
-from .sinniapipeline.snow_pipeline import procesarArchivo
+from .sinniapipeline.snow_pipeline import pipeline
+
+
 
 class Topics:
     def __init__(self):
-        self.tweets = ['hola esto es un tweet', 'esto es otro tweet', 'esto es un tercer tweet']
+        #self.tweets = ['hola esto es un tweet', 'esto es otro tweet', 'esto es un tercer tweet']
+        self.time_window_mins = 14400.0
+        self.n_documentos_maximos = 5
+        self.factor_frecuencia = 0.001
+        self.num_ngrams_in_tweet = 3
+        self.minimo_usuarios = 3
+        self.minimo_hashtags = 3
+        self.ngrama_minimo = 2
+        self.ngrama_maximo = 4
+        self.pipe = pipeline()
 
-    def obtenerTopicos(self, archivo):
+    def obtenerModelo(self, archivo):
+        return self.pipe.obtenerModelo(archivo=archivo,
+                                   time_window_mins=self.time_window_mins,
+                                   n_documentos_maximos=self.n_documentos_maximos,
+                                   factor_frecuencia=self.factor_frecuencia,
+                                   num_ngrams_in_tweet=self.num_ngrams_in_tweet,
+                                   minimo_usuarios=self.minimo_usuarios,
+                                   minimo_hashtags=self.minimo_hashtags,
+                                   ngrama_minimo=self.ngrama_minimo,
+                                   ngrama_maximo=self.ngrama_maximo)
 
-        time_window_mins = 14400.0
-        n_documentos_maximos = 5
-        factor_frecuencia = 0.001
-        num_ngrams_in_tweet = 3
-        minimo_usuarios = 3
-        minimo_hashtags = 3
-        ngrama_minimo = 2
-        ngrama_maximo = 4
-
-        ngramas  = procesarArchivo(archivo=archivo, time_window_mins=time_window_mins, n_documentos_maximos=n_documentos_maximos,
-                        factor_frecuencia=factor_frecuencia, num_ngrams_in_tweet=num_ngrams_in_tweet, minimo_usuarios=minimo_usuarios,
-                        minimo_hashtags=minimo_hashtags, ngrama_minimo=ngrama_minimo, ngrama_maximo=ngrama_maximo)
-
-
-        return ngramas
+    def obtenerTopicos(self, LinkageMatrix, threshold, Xclean, inv_map, map_index_after_cleaning, tweets_cluster):
+        return self.pipe.obtenerTopicos(LinkageMatrix, threshold,Xclean,inv_map,map_index_after_cleaning,tweets_cluster)
 
 # Create your models here.
 
