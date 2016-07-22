@@ -11,16 +11,16 @@ def index(request):
         Xclean = cache.get('Xclean')
         inv_map = cache.get('inv')
         map = cache.get('map')
+        topics = Topics()
 
-        if L == None:
-            print(L)
 
+        if L is None:
             if 'archivo_tweets' in request.FILES:
                 my_uploaded_file = request.FILES['archivo_tweets'].read()
                 content = my_uploaded_file.decode('utf-8')
                 lineas = [s.strip() for s in content.splitlines()]
 
-                topics = Topics()
+
                 L, tweets, Xclean, inv_map, map = topics.obtenerModelo(lineas)
 
                 cache.set('Linkage', L)
@@ -28,6 +28,8 @@ def index(request):
                 cache.set('Xclean', Xclean)
                 cache.set('inv', inv_map)
                 cache.set('map', map)
+        else:
+            print(inv_map)
 
         threshold = request.POST['threshold']
         threshold = float(threshold)
