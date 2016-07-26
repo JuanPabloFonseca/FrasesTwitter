@@ -1,8 +1,6 @@
 from django.db import models
 from .sinniapipeline.snow_pipeline import pipeline
 
-
-
 class Topics:
     def __init__(self):
         #self.tweets = ['hola esto es un tweet', 'esto es otro tweet', 'esto es un tercer tweet']
@@ -30,8 +28,9 @@ class Topics:
     def obtenerTopicos(self, LinkageMatrix, threshold, Xclean, inv_map, map_index_after_cleaning, tweets_cluster):
         return self.pipe.obtenerTopicos(LinkageMatrix, threshold,Xclean,inv_map,map_index_after_cleaning,tweets_cluster)
 
+    def obtenerClusterDeTweet(self, tweet, centroides, cnt, inv_map):
+        return self.pipe.clusterDelTweet(tweet,centroides,cnt,inv_map)
+
+
+
 # Create your models here.
-
-
-
-

@@ -137,7 +137,7 @@ if __name__ == "__main__":
     ventanas.append([])
     tweets_cluster = []
     tweets_cluster.append([])
-    archivo = open('PanCoronaModelojsons/PAN_TWS')
+    archivo = open('PanCoronaModelojsons/todos_tws.txt')
     start = time.time()
     for line in archivo:
         contenido = line.split('\\\\\\\\\\\\')

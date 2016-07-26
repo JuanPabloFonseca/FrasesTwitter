@@ -152,7 +152,6 @@ class pipeline:
             # dt = 0.5
             # print("AVERAGE")
 
-            start = time.time()
             LinkageMatrix = fastcluster.linkage(X, method='average')
 
             Xclean = data_transform.named_steps['filtrar'].Xclean
@@ -164,15 +163,16 @@ class pipeline:
 
 
     def obtenerTopicos(self, LinkageMatrix, threshold, Xclean, inv_map, map_index_after_cleaning, tweets_cluster):
+        start = time.time()
         T = sch.to_tree(LinkageMatrix)
         print("hclust cut threshold:", T.dist * threshold)
         indL = sch.fcluster(LinkageMatrix, T.dist * threshold, 'distance')
         freqTwCl = Counter(indL)
         end = time.time()
-        # print("tiempo clustering: {} seg".format(end - start))
+        print("tiempo clustering: {} seg".format(end - start))
 
         # mostrarNTweetsCluster(3, data_transform, indL)
-        mng=self.mostrarNGramas(Xclean, inv_map, map_index_after_cleaning,freqTwCl, indL, tweets_cluster,0)
+        mng = self.mostrarNGramas(Xclean, inv_map, map_index_after_cleaning,freqTwCl, indL, tweets_cluster,0)
         #mng[0] es main_ngram_in_cluster, tiene info de # tweets por clust, tweet + repr. por clust, ngramas del clust
         #mng[1] son los centroides de los clusters
 
@@ -195,11 +195,12 @@ class pipeline:
         ##############################################
 
 
-        return mng[0] #regresa main_ngram_in_cluster
+
+        return mng #regresa main_ngram_in_cluster
 
 
 
-    def clusterDelTweet(tw,centroides,cnt,inv_map):
+    def clusterDelTweet(self,tw,centroides,tweetsEnClusters,inv_map):
         stop_words = creaStopWords()
         tw = limpiarTextoTweet(tw, stop_words)
         vectortweet=[0]*len(inv_map)
@@ -209,18 +210,17 @@ class pipeline:
             for p in range(len(tw)-len(ngsp)+1):
                 pal=[re.sub('[@#]', '',tw[p+pa]) for pa in range(len(ngsp))]
                 if set(ngsp) == set(pal):
-                    vectortweet[ng]+=1
+                    vectortweet[ng] += 1
 
-
-        clusterBasura = np.argmax(cnt)
+        # clusterBasura = np.argmax(tweetsEnClusters)
         cercano = -1
         dist = 1000000000
         for c in range(len(centroides)):
-            if c != clusterBasura:
-                distActual = distance.euclidean(centroides[c], vectortweet)
-                if (distActual < dist):
-                    dist = distActual
-                    cercano = c
+        #    if c != clusterBasura:
+            distActual = distance.euclidean(centroides[c], vectortweet)
+            if (distActual < dist):
+                dist = distActual
+                cercano = c
 
         #regresa el número de cluster al que el tweet "pertenece" (recordando que la numeración empieza desde 1)
         return (cercano+1)
