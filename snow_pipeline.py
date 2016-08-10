@@ -14,6 +14,8 @@ import fastcluster
 import re
 import time
 
+import matplotlib.pyplot as plt
+
 def mostrarNTweetsCluster(N, data_transform, indL):
     #Mostrar los n tweets de cada cluster
     idx_clusts = sorted([(l, k) for k, l in enumerate(indL)], key=lambda x: x[0])
@@ -103,6 +105,97 @@ def clusterDelTweet(tw,centroides,cnt):
     #regresa el número de cluster al que el tweet "pertenece" (recordando que la numeración empieza desde 1)
     return (cercano+1)
 
+def imprimirDendogramas(X):
+    hclust_methods = ["ward", "median", "centroid", "weighted", "single", "complete", "average"]
+
+    iris_dendlist = []
+    show_leaf_counts = True
+    # for i in hclust_methods:
+    #    #hclust(d_iris, method = hclust_methods[i])
+    #   iris_dendlist.append()
+    # names(iris_dendlist) = hclust_methods
+    # iris_dendlist
+    # par(mfrow = c(4,2))
+    # for i in range(7):
+
+    #    ddata = iris_dendlist[i]
+    #    plt.subplot(ddata, i, figsize=(6, 5))
+
+    # fig, axes = plt.subplots(nrows=3, ncols=3)
+    fig = plt.figure(1, figsize=(20, 10))
+    fig.suptitle('Corona, modelo y pan. [1,3] ngramas. Distancia euclideana.', fontsize=20)
+    # plt.clf()
+
+    plt.subplot(3, 3, 1)
+    plt.title(hclust_methods[0])
+    hc_iris = fastcluster.linkage(X, method=hclust_methods[0])
+    sch.dendrogram(hc_iris,
+       color_threshold=1,
+       # p=6,
+       # truncate_mode='lastp',
+       show_leaf_counts=show_leaf_counts)
+
+    plt.subplot(3, 3, 2)
+    plt.title(hclust_methods[1])
+    hc_iris = fastcluster.linkage(X, method=hclust_methods[1])
+    sch.dendrogram(hc_iris,
+       color_threshold=1,
+       # p=6,
+       # truncate_mode='lastp',
+       show_leaf_counts=show_leaf_counts)
+
+    plt.subplot(3, 3, 3)
+    plt.title(hclust_methods[2])
+    hc_iris = fastcluster.linkage(X, method=hclust_methods[2])
+    sch.dendrogram(hc_iris,
+       color_threshold=1,
+       # p=6,
+       # truncate_mode='lastp',
+       show_leaf_counts=show_leaf_counts)
+
+    plt.subplot(3, 3, 4)
+    plt.title(hclust_methods[3])
+    hc_iris = fastcluster.linkage(X, method=hclust_methods[3])
+    sch.dendrogram(hc_iris,
+       color_threshold=1,
+       # p=6,
+       # truncate_mode='lastp',
+       show_leaf_counts=show_leaf_counts)
+
+    plt.subplot(3, 3, 5)
+    plt.title(hclust_methods[4])
+    hc_iris = fastcluster.linkage(X, method=hclust_methods[4])
+    sch.dendrogram(hc_iris,
+       color_threshold=1,
+       # p=6,
+       # truncate_mode='lastp',
+       show_leaf_counts=show_leaf_counts)
+
+    plt.subplot(3, 3, 6)
+    plt.title(hclust_methods[5])
+    hc_iris = fastcluster.linkage(X, method=hclust_methods[5])
+    sch.dendrogram(hc_iris,
+       color_threshold=1,
+       # p=6,
+       # truncate_mode='lastp',
+       show_leaf_counts=show_leaf_counts)
+
+    plt.subplot(3, 3, 7)
+    plt.title(hclust_methods[6])
+    hc_iris = fastcluster.linkage(X, method=hclust_methods[6])
+    sch.dendrogram(hc_iris,
+       color_threshold=1,
+       # p=6,
+       # truncate_mode='lastp',
+       show_leaf_counts=show_leaf_counts)
+
+    # plt.figure(iris_dendlist[[i]], axes = False, horiz = True)
+    show_leaf_counts = True
+
+    # plt.title("Dendrogram")
+
+    plt.show()
+    # plt.figure(1, figsize=(6, 5))
 
 
 if __name__ == "__main__":
@@ -199,7 +292,6 @@ if __name__ == "__main__":
                                    ('filtrar', FiltroNGramasTransformer(numMagico=3,vectorizer=vect)),
                                    ('matrizdist', BinaryToDistanceTransformer(_norm='l2',_metric='euclidean'))])
 
-
         ######### CLUSTERING
 
         start = time.time()
@@ -208,36 +300,39 @@ if __name__ == "__main__":
         print("tiempo pipeline: {} seg".format(end - start))
         print("Tweets ventana {} vs limpios {}".format(len(ventanas[ventana]), X.shape[0]))
 
-        dt = 0.5
-        print("AVERAGE")
-        start = time.time()
-        L = fastcluster.linkage(X, method='average')
-        T = sch.to_tree(L)
-        print("hclust cut threshold:", T.dist * dt)
-        indL = sch.fcluster(L, T.dist * dt, 'distance')
-        freqTwCl = Counter(indL)
-        end = time.time()
-        print("tiempo clustering: {} seg".format(end - start))
-        mostrarNTweetsCluster(3, data_transform, indL)
-        mng=mostrarNGramas(data_transform) #muestra ngramas más repetidos por cluster
-        # mng[0] es main_ngram_in_cluster, tiene info de # tweets por clust, tweet + repr. por clust, ngramas del clust
-        # mng[1] son los centroides de los clusters
-        centroides=mng[1]
-        cuenta=[mng[0][cl][0] for cl in range(len(mng[0]))] # rescato el num de tweets por cluster
+
+        imprimirDendogramas(X)
+
+        # dt = 0.5
+        # print("AVERAGE")
+        # start = time.time()
+        # L = fastcluster.linkage(X, method='average')
+        # T = sch.to_tree(L)
+        # print("hclust cut threshold:", T.dist * dt)
+        # indL = sch.fcluster(L, T.dist * dt, 'distance')
+        # freqTwCl = Counter(indL)
+        # end = time.time()
+        # print("tiempo clustering: {} seg".format(end - start))
+        # mostrarNTweetsCluster(3, data_transform, indL)
+        # mng=mostrarNGramas(data_transform) #muestra ngramas más repetidos por cluster
+        # # mng[0] es main_ngram_in_cluster, tiene info de # tweets por clust, tweet + repr. por clust, ngramas del clust
+        # # mng[1] son los centroides de los clusters
+        # centroides=mng[1]
+        # cuenta=[mng[0][cl][0] for cl in range(len(mng[0]))] # rescato el num de tweets por cluster
 
         #ver a qué cluster pertenece un nuevo tweet (ejemplo a continuación):
-        tuit = "Me ha gustado un video de @youtube." #este no lo clasifica bien, sino que lo clasifica al cluster basura. SOLUCIÓN: no considerar al cluster basura.
-        c = clusterDelTweet(tuit, centroides, cuenta)
-        print("El nuevo tweet {} pertenece al cluster {}.\n".format(tuit,c))
-
-        tuit = "La alianza pan prd se está llevando a cabo."
-        c = clusterDelTweet(tuit, centroides, cuenta)
-        print("El nuevo tweet {} pertenece al cluster {}.\n".format(tuit, c))
-
-        tuit = "Se está construyendo un nuevo modelo económico que mejore al país."
-        c = clusterDelTweet(tuit, centroides, cuenta)
-        print("El nuevo tweet {} pertenece al cluster {}.\n".format(tuit, c))
-
-        tuit = "Ya listos para la copa corona mx?"
-        c = clusterDelTweet(tuit, centroides, cuenta)
-        print("El nuevo tweet {} pertenece al cluster {}.\n".format(tuit, c))
+        # tuit = "Me ha gustado un video de @youtube." #este no lo clasifica bien, sino que lo clasifica al cluster basura. SOLUCIÓN: no considerar al cluster basura.
+        # c = clusterDelTweet(tuit, centroides, cuenta)
+        # print("El nuevo tweet {} pertenece al cluster {}.\n".format(tuit,c))
+        #
+        # tuit = "La alianza pan prd se está llevando a cabo."
+        # c = clusterDelTweet(tuit, centroides, cuenta)
+        # print("El nuevo tweet {} pertenece al cluster {}.\n".format(tuit, c))
+        #
+        # tuit = "Se está construyendo un nuevo modelo económico que mejore al país."
+        # c = clusterDelTweet(tuit, centroides, cuenta)
+        # print("El nuevo tweet {} pertenece al cluster {}.\n".format(tuit, c))
+        #
+        # tuit = "Ya listos para la copa corona mx?"
+        # c = clusterDelTweet(tuit, centroides, cuenta)
+        # print("El nuevo tweet {} pertenece al cluster {}.\n".format(tuit, c))

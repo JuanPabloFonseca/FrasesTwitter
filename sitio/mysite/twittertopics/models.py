@@ -11,7 +11,7 @@ class Topics:
         self.minimo_usuarios = 3
         self.minimo_hashtags = 3
         self.ngrama_minimo = 2
-        self.ngrama_maximo = 4
+        self.ngrama_maximo = 3
         self.pipe = pipeline()
 
     def obtenerModelo(self, archivo):

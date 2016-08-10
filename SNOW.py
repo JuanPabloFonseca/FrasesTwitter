@@ -594,7 +594,7 @@ if __name__ == "__main__":
                 # fout.write(line)
 
     file_timeordered_tweets.close()
-# fout.close()
+    # fout.close()
 
 
 ## pensada como opcion en la matriz de distancias
