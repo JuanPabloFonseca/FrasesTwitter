@@ -122,8 +122,6 @@ def clusterDelTweet(tw,centroides,cnt):
 
     # regresa el número de cluster al que el tweet "pertenece" (recordando que la numeración empieza desde 1)
     return cercano+1
-    #regresa el número de cluster al que el tweet "pertenece" (recordando que la numeración empieza desde 1)
-    return (cercano+1)
 
 def imprimirDendogramas(X):
     hclust_methods = ["ward", "median", "centroid", "weighted", "single", "complete", "average"]
@@ -324,7 +322,7 @@ if __name__ == "__main__":
 
         imprimirDendogramas(X)
 
-        dt = 0.5
+        dt = 0.1
         print("AVERAGE")
         start = time.time()
         L = fastcluster.linkage(X, method='average')
@@ -380,7 +378,7 @@ if __name__ == "__main__":
                                             ('matrizdist', BinaryToDistanceTransformer(_norm='l2', _metric='euclidean'))])
         X2 = data_transform2.fit_transform(ngr_clu)
         L2 = fastcluster.linkage(X2, method='ward')
-        dt2 = 0.4 # variarle a éste
+        dt2 = 0.3 # variarle a éste
         T2 = sch.to_tree(L2)
         print("hclust cut threshold:", T2.dist * dt2)
         indL2 = sch.fcluster(L2, T2.dist * dt2, 'distance')
@@ -390,7 +388,7 @@ if __name__ == "__main__":
         freqTwCl2 = Counter(indL2)
         #hasta aquí creo que la 2da clust está bien
 
-
+        imprimirDendogramas(X2)
         mostrarNTweetsCluster2(3, data_transform, indL, indL2)
 
         ## revisar diferencia en este, que falla:
