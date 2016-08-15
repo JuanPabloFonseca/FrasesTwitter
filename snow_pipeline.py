@@ -105,7 +105,7 @@ def clusterDelTweet(tw,centroides,cnt):
     #regresa el número de cluster al que el tweet "pertenece" (recordando que la numeración empieza desde 1)
     return (cercano+1)
 
-def imprimirDendogramas(X):
+def imprimirDendogramas(X, metodoDistancia):
     hclust_methods = ["ward", "median", "centroid", "weighted", "single", "complete", "average"]
 
     iris_dendlist = []
@@ -122,8 +122,8 @@ def imprimirDendogramas(X):
     #    plt.subplot(ddata, i, figsize=(6, 5))
 
     # fig, axes = plt.subplots(nrows=3, ncols=3)
-    fig = plt.figure(1, figsize=(20, 10))
-    fig.suptitle('Corona, modelo y pan. [1,3] ngramas. Distancia euclideana.', fontsize=20)
+    fig = plt.figure(figsize=(20, 10))
+    fig.suptitle('3 temas. [2,3] ngramas. Distancia ' + metodoDistancia + '.', fontsize=20)
     # plt.clf()
 
     plt.subplot(3, 3, 1)
@@ -194,14 +194,12 @@ def imprimirDendogramas(X):
 
     # plt.title("Dendrogram")
 
-    plt.show()
+    # plt.show()
     # plt.figure(1, figsize=(6, 5))
 
 
 if __name__ == "__main__":
-
     ########### PARAMETROS
-
     time_window_mins = 14400.0
     n_documentos_maximos = 5
     factor_frecuencia = 0.001
@@ -230,7 +228,7 @@ if __name__ == "__main__":
     ventanas.append([])
     tweets_cluster = []
     tweets_cluster.append([])
-    archivo = open('PanCoronaModelojsons/todos_tws.txt')
+    archivo = open('PanCoronaModelojsons/3temas.prueba')
     start = time.time()
     for line in archivo:
         contenido = line.split('\\\\\\\\\\\\')
@@ -286,22 +284,26 @@ if __name__ == "__main__":
         ########### PIPELINE
         max_freq = max(int(len(ventanas[ventana]) * factor_frecuencia), n_documentos_maximos)
 
-        vect = CountVectorizer(tokenizer=limpiarTextoTweet, binary=True, min_df=max_freq, ngram_range=(1, 3))
+        vect = CountVectorizer(tokenizer=limpiarTextoTweet, binary=True, min_df=max_freq, ngram_range=(2, 3))
 
-        data_transform = Pipeline([('counts', vect),
-                                   ('filtrar', FiltroNGramasTransformer(numMagico=3,vectorizer=vect)),
-                                   ('matrizdist', BinaryToDistanceTransformer(_norm='l2',_metric='euclidean'))])
+        # mahalanobis, yule
+        metodos = ['braycurtis', 'canberra', 'chebyshev', 'correlation', 'dice', 'hamming', 'jaccard', 'kulsinski', 'matching', 'minkowski', 'rogerstanimoto', 'russellrao', 'seuclidean', 'sokalmichener', 'sokalsneath', 'sqeuclidean']
 
-        ######### CLUSTERING
+        for metodo in metodos:
+            data_transform = Pipeline([('counts', vect),
+                                       ('filtrar', FiltroNGramasTransformer(numMagico=3,vectorizer=vect)),
+                                       ('matrizdist', BinaryToDistanceTransformer(_norm='l2',_metric=metodo))])
+            ######### CLUSTERING
+            start = time.time()
+            X = data_transform.fit_transform(ventanas[ventana])
+            end = time.time()
+            print(metodo)
+            print("tiempo pipeline: {} seg".format(end - start))
+            print("Tweets ventana {} vs limpios {}".format(len(ventanas[ventana]), X.shape[0]))
 
-        start = time.time()
-        X = data_transform.fit_transform(ventanas[ventana])
-        end = time.time()
-        print("tiempo pipeline: {} seg".format(end - start))
-        print("Tweets ventana {} vs limpios {}".format(len(ventanas[ventana]), X.shape[0]))
+            imprimirDendogramas(X, metodo)
 
-
-        imprimirDendogramas(X)
+        plt.show()
 
         # dt = 0.5
         # print("AVERAGE")
@@ -336,3 +338,9 @@ if __name__ == "__main__":
         # tuit = "Ya listos para la copa corona mx?"
         # c = clusterDelTweet(tuit, centroides, cuenta)
         # print("El nuevo tweet {} pertenece al cluster {}.\n".format(tuit, c))
+
+
+## POS Tag un tweet
+# from nltk.tag import StanfordPOSTagger
+# st = StanfordPOSTagger('spanish-distsim.tagger')
+# st.tag('El exámen está muy perro')

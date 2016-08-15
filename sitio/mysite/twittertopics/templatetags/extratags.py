@@ -10,3 +10,14 @@ def div(value, arg):
             return value / arg
     except: pass
     return ''
+
+
+@register.filter(name='mul')
+def mul(value, arg):
+    try:
+        value = float( value )
+        arg = float( arg )
+        if arg:
+            return value * arg
+    except: pass
+    return ''

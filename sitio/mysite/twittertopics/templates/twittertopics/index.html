@@ -14,6 +14,7 @@
         }
         .twrep {
             font-size: 0.8em;
+            color: #4832e2;
         }
 
 
@@ -85,7 +86,11 @@
                     {% with val=ng.0.1 s=0 %}
                         {% for ngrama in ng %}
                                 {% with s=ngrama.1|div:val %}
-                                    <span style="font-size:{{s}}em;" >{{ ngrama.0 }}, </span>
+                                    {% with fsize=s|mul:1.5 %}
+                                        {% if fsize > 0.5 %}
+                                        <span style="font-size:{{fsize}}em;" >{{ ngrama.0 }}, </span>
+                                        {% endif %}
+                                    {% endwith %}
                                 {% endwith %}
                         {% endfor %}
                     {% endwith %}

@@ -153,7 +153,7 @@ class pipeline:
             # print("AVERAGE")
 
             # ward,
-            LinkageMatrix = fastcluster.linkage(X, method='median')
+            LinkageMatrix = fastcluster.linkage(X, method='ward')
 
             Xclean = data_transform.named_steps['filtrar'].Xclean
             inv_map = data_transform.named_steps['filtrar'].inv_map

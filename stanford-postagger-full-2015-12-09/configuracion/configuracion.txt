@@ -1,0 +1,4 @@
+Configurar las siguientes propiedades en el proyecto:
+	CLASSPATH
+	STANFORD_MODELS
+	JAVA_HOME (solo si tienes varias versiones de java, si solo tienes 1.8 o superior no hace falta)

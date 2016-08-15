@@ -125,7 +125,9 @@ if __name__ == "__main__":
     ntweets = 0
     tweettotales = 0
 
+    #
     # st = StanfordPOSTagger('spanish-distsim.tagger')
+
     tweets_cluster = []
 
     #quitar tweets repetidos
