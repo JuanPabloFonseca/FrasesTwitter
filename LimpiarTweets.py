@@ -173,3 +173,6 @@ def quitarEmoticons(text):
     bien = re.sub(r"&gt;|&lt;(3+)?|\\n|(:|;)(\)|\(|D|\*)|&amp;|\*-\*|(x|X)(d|D)", ' ', bien)
 
     return bien
+
+def tokens2daClust(tweet):
+    return tweet.split(' , ')
