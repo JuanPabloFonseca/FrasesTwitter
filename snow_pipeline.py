@@ -49,6 +49,33 @@ def mostrarNTweetsCluster2(N, data_transform, indL, indL2): # N = num tweets por
             print(tweets_cluster[ventana][data_transform.named_steps['filtrar'].map_index_after_cleaning.get(tuitscluster[k])])
         print(" ")
 
+def mostrarNGramas2(indL, indL2, centroides, cuenta, inv_map): # sólo muestra los ngramas de cada cluster (2da clusterizacion)
+    # Mostrar los n tweets de cada cluster
+    idx_clusts = sorted([(l, k) for k, l in enumerate(indL)], key=lambda x: x[0])   # lista indexada de los los clusters originales (índice empieza en 1) vs los tweets (índice empieza en 0)
+    idx_clusts2 = sorted([(l, k) for k, l in enumerate(indL2)], key=lambda y: y[0]) # lista indexada de los los clusters nuevos (índice empieza en 1) vs los clusters originales (índice empieza en 0)
+    frecuencia_ngramas_total = [-1] * len(set([idx_clusts2[i][0] for i in range(len(idx_clusts2))])) # se guarda la frecuencia de los ngramas en TODOS los clusters nuevos (separado por cluster nuevo)
+
+    ngramas_centroides = [] #ngramas correspondientes a los centroides originales
+    for c in range(len(centroides)):
+        ngramas_centroides.append([centroides[c][i]*cuenta[c] for i in range(len(centroides[c]))]) # al final del for, ngramas_centroides tiene la frecuencia de los ngramas
+
+    for y in idx_clusts2:
+        if frecuencia_ngramas_total[y[0]-1] == -1 : #si todavía no hay nada del cluster y[0] - 1
+            frecuencia_ngramas_total[y[0] - 1] = [0]*len(inv_map)
+        frecuencia_ngramas_total[y[0] - 1] = [frecuencia_ngramas_total[y[0] - 1][i] + ngramas_centroides[y[1]][i] for i in range(len(frecuencia_ngramas_total[y[0] - 1]))]
+
+    lista_ngramas_por_cluster=[{} for i in range(len(frecuencia_ngramas_total))]
+    for f in range(len(frecuencia_ngramas_total)):
+        print("Ngramas del cluster {0}: ".format(f+1))
+        for ng in range(len(frecuencia_ngramas_total[f])):
+            if frecuencia_ngramas_total[f][ng] > 0:
+                lista_ngramas_por_cluster[f][inv_map[ng]]=frecuencia_ngramas_total[f][ng]
+        lista_ngramas_por_cluster[f] = sorted(lista_ngramas_por_cluster[f].items(), key=lambda x: x[1], reverse=True)
+        print(lista_ngramas_por_cluster[f])
+
+    return lista_ngramas_por_cluster # es una lista de listas de ngramas por cluster (nuevo)
+
+
 
 def mostrarNGramas(Xclean, freqTwCl, indL, inv_map):
 
@@ -59,12 +86,18 @@ def mostrarNGramas(Xclean, freqTwCl, indL, inv_map):
     # print(inv_map)
     main_ngram_in_cluster = [-1] * len(freqTwCl)
 
+
+    num_ngram_total = [-1] * len(freqTwCl) # guarda la frecuencia de los ngramas PARA TODOS LOS CLUSTERS.
+    cuenta = [0] * len(freqTwCl)
     # centroide = []
     centroide = np.zeros((len(freqTwCl), Xclean.shape[1]))
 
-    num_ngram = {}
+
     for clust in range(len(freqTwCl)):
         num_ngram = {}  # [0] * data_transform.named_steps['filtrar'].Xclean.shape[1]
+
+        # num_ngram guarda la frecuencia de los ngramas para el cluster clust.
+
         # centroide.append([0] * Xclean.shape[1])
         cont = 0
         # tweets_del_cluster = []
@@ -104,7 +137,11 @@ def mostrarNGramas(Xclean, freqTwCl, indL, inv_map):
         # print("Num. Tweets {}, un tweet ejemplar: \"{}\" y ngramas {}".format(cont,
         #      tweets_cluster[ventana][data_transform.named_steps['filtrar'].map_index_after_cleaning.get(cercano)], num_ngram))
 
-    return [centroide, num_ngram]
+
+        num_ngram_total[clust] = num_ngram  # se guarda num_ngram. Al final, num_ngram_total tiene la info de TODOS los clusters
+        cuenta[clust]=cont
+
+    return [centroide, num_ngram_total, cuenta] # se regresa num_ngram_total, porque num_ngram sólo sería para el último cluster y queremos para todos
 
 def clusterDelTweet(tw,centroides,cnt):
     tw = limpiarTextoTweet(tw, stop_words)
@@ -352,6 +389,7 @@ if __name__ == "__main__":
         mng = mostrarNGramas(Xclean, freqTwCl, indL, inv_map)
         centroides = mng[0]
         ngramas_centroides = mng[1]
+        cuenta = mng[2] # número de tweets por cluster
 
         for i in range(centroides.shape[0]):
             cercano = 0
@@ -363,6 +401,7 @@ if __name__ == "__main__":
                     distancia = distActual
             tweet = tweets_cluster[ventana][data_transform.named_steps['filtrar'].map_index_after_cleaning.get(cercano)]
             print("\nEl tweet mas cercano del cluster {} es {}".format(i + 1, tweet))
+
 
 
         # cuenta = [mng[0][cl][0] for cl in range(len(mng[0]))] # rescato el num de tweets por cluster
@@ -397,13 +436,13 @@ if __name__ == "__main__":
 
         print("hclust cut threshold:", T2.dist * dt2)
         indL2 = sch.fcluster(L2, T2.dist * dt2, 'distance')
-        print("indL2")
-        print(type(indL2))
-        print(indL2)
         freqTwCl2 = Counter(indL2)
         #hasta aquí creo que la 2da clust está bien
 
         res = mostrarNGramas(centroides, freqTwCl2, indL2 , [])
+
+        print("NGRAMAS de los clusters nuevos: ")
+        mostrarNGramas2( indL, indL2, centroides, cuenta, inv_map)
 
         nuevos_centroides = res[0]
 
