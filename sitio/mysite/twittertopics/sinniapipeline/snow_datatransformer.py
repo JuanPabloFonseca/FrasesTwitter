@@ -11,10 +11,11 @@ class BinaryToDistanceTransformer(TransformerMixin):
         self.metric = _metric
 
     def transform(self, X, y=None, **fit_params):
-        Xdense = np.matrix(X).astype('float')
-        X_scaled = preprocessing.scale(Xdense)
+
+        X_scaled = preprocessing.scale(X) # hace copia de los datos, posible optimizacion con copy=False, requiere sparce matrix
         X_normalized = preprocessing.normalize(X_scaled, norm=self.norm)
-        return pairwise_distances(X_normalized, metric=self.metric)
+        X_dense = np.matrix(X_normalized).astype('float')
+        return pairwise_distances(X_dense, metric=self.metric)
 
     def fit(self, X, y=None, **fit_params):
         return self

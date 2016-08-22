@@ -25,8 +25,8 @@ class Topics:
                                    ngrama_minimo=self.ngrama_minimo,
                                    ngrama_maximo=self.ngrama_maximo)
 
-    def obtenerTopicos(self, LinkageMatrix, threshold, Xclean, inv_map, map_index_after_cleaning, tweets_cluster):
-        return self.pipe.obtenerTopicos(LinkageMatrix, threshold,Xclean,inv_map,map_index_after_cleaning,tweets_cluster)
+    def obtenerTopicos(self, LinkageMatrix, threshold, centroides_primera, Xclean, inv_map, map_index_after_cleaning, tweets_cluster, indL,cuenta):
+        return self.pipe.obtenerTopicos(LinkageMatrix, threshold,centroides_primera, Xclean,inv_map,map_index_after_cleaning,tweets_cluster, indL,cuenta)
 
     def obtenerClusterDeTweet(self, tweet, centroides, cnt, inv_map):
         return self.pipe.clusterDelTweet(tweet,centroides,cnt,inv_map)

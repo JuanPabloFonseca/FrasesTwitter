@@ -79,28 +79,14 @@ def mostrarNGramas2(indL, indL2, centroides, cuenta, inv_map): # sólo muestra l
 
 def mostrarNGramas(Xclean, freqTwCl, indL, inv_map):
 
-    # Xclean = data_transform.named_steps['filtrar'].Xclean
-    # inv_map = data_transform.named_steps['filtrar'].inv_map
-
-    # obtención del (los) ngrama(s) MÁS repetido(s) en cada cluster
-    # print(inv_map)
-    main_ngram_in_cluster = [-1] * len(freqTwCl)
-
-
     num_ngram_total = [-1] * len(freqTwCl) # guarda la frecuencia de los ngramas PARA TODOS LOS CLUSTERS.
     cuenta = [0] * len(freqTwCl)
-    # centroide = []
     centroide = np.zeros((len(freqTwCl), Xclean.shape[1]))
-
 
     for clust in range(len(freqTwCl)):
         num_ngram = {}  # [0] * data_transform.named_steps['filtrar'].Xclean.shape[1]
 
-        # num_ngram guarda la frecuencia de los ngramas para el cluster clust.
-
-        # centroide.append([0] * Xclean.shape[1])
         cont = 0
-        # tweets_del_cluster = []
         for tweet in range(Xclean.shape[0]):
             if indL[tweet] == clust + 1:
                 # tweets_del_cluster.append(tweet)
@@ -116,26 +102,6 @@ def mostrarNGramas(Xclean, freqTwCl, indL, inv_map):
             num_ngram = sorted(num_ngram.items(), key=lambda x: x[1], reverse=True)
 
         centroide[clust] = [(x / cont) for x in centroide[clust]]
-    # centroide = np.matrix(centroide)
-
-        # cercano = -1
-        # distancia = 10000000
-
-        # print(tweets_del_cluster)
-        # for k in range(len(tweets_del_cluster)):
-        #    actual = tweets_del_cluster[k]
-        #    distActual = distance.euclidean(centroide[clust], data_transform.named_steps['filtrar'].Xclean[actual, :])
-        #    if distActual < distancia:
-        #        cercano = actual
-        #        distancia = distActual
-        #print("\n{} Tweets en Cluster {}".format(cont, clust + 1))
-
-
-
-        # main_ngram_in_cluster[clust] = [cont, tweets_cluster[ventana][data_transform.named_steps['filtrar'].map_index_after_cleaning.get(cercano)], num_ngram]
-        # print("CENTROIDE {}".format(centroide[clust]))
-        # print("Num. Tweets {}, un tweet ejemplar: \"{}\" y ngramas {}".format(cont,
-        #      tweets_cluster[ventana][data_transform.named_steps['filtrar'].map_index_after_cleaning.get(cercano)], num_ngram))
 
 
         num_ngram_total[clust] = num_ngram  # se guarda num_ngram. Al final, num_ngram_total tiene la info de TODOS los clusters
@@ -293,7 +259,7 @@ if __name__ == "__main__":
     ventanas.append([])
     tweets_cluster = []
     tweets_cluster.append([])
-    archivo = open('PanCoronaModelojsons/3temas.prueba')
+    archivo = open('PanCoronaModelojsons/todos_tws.txt')
     start = time.time()
     for line in archivo:
         contenido = line.split('\\\\\\\\\\\\')
@@ -358,8 +324,7 @@ if __name__ == "__main__":
 
 
         # ######## CLUSTERING
-
-        imprimirDendogramas(X)
+        X = data_transform.fit_transform(ventanas[ventana])
 
         dt = 0.1
         print("AVERAGE")
@@ -453,7 +418,7 @@ if __name__ == "__main__":
             print("\nEl tweet mas cercano del cluster {} es {}".format(i+1, tweet))
             # print("\nLos ngramas del tweet {} son {}".format(i, ngramas_centroides[i]))
 
-        imprimirDendogramas(X_centroides)
+        imprimirDendogramas(X_centroides, metodoDistancia='euclideana')
 
         plt.show()
         # mostrarNTweetsCluster2(3, data_transform, indL, indL2)

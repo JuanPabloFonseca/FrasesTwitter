@@ -13,6 +13,9 @@ def index(request):
         Xclean = cache.get('Xclean')
         inv_map = cache.get('inv')
         map = cache.get('map')
+        indL = cache.get('indL')
+        cuenta = cache.get('cuenta')
+        centroides_primera = cache.get('centroides_primera')
         cTop = Topics()
 
         if L is None or 'archivo_tweets' in request.FILES:
@@ -21,7 +24,7 @@ def index(request):
             content = my_uploaded_file.decode('utf-8')
             lineas = [s.strip() for s in content.splitlines()]
 
-            L, tweets, Xclean, inv_map, map = cTop.obtenerModelo(lineas)
+            L, tweets, centroides_primera, Xclean, inv_map, map, indL, cuenta = cTop.obtenerModelo(lineas)
 
             # dh = sch.dendrogram(L)
 
@@ -30,6 +33,9 @@ def index(request):
             cache.set('Xclean', Xclean)
             cache.set('inv', inv_map)
             cache.set('map', map)
+            cache.set('indL', indL)
+            cache.set('cuenta', cuenta)
+            cache.set('centroides_primera', centroides_primera)
         else:
             print(inv_map)
 
@@ -39,7 +45,7 @@ def index(request):
         else:
             threshold = 0.5
 
-        topics, centroides = cTop.obtenerTopicos(L,threshold,Xclean,inv_map,map,tweets)
+        topics, centroides = cTop.obtenerTopicos(L,threshold,centroides_primera, Xclean,inv_map,map,tweets, indL, cuenta)
         # cuenta=[resultado[cl][0] for cl in range(len(resultado))]
         cache.set('centroides',centroides)
         # cache.set('cuenta',cuenta)
