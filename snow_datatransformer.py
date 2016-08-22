@@ -33,7 +33,6 @@ class FiltroNGramasTransformer(TransformerMixin):
         self.vectorizer = vectorizer
 
     def transform(self, X, y=None, **fit_params):
-
         self.Xclean = np.zeros((1, X.shape[1]))
         for i in range(0, X.shape[0]):
             # keep sample with size at least numMagico ngramas

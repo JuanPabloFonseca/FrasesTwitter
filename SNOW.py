@@ -465,6 +465,7 @@ if __name__ == "__main__":
                 for k in keywords.split(","):
                     if not '@' in k and not '#' in k:
                         headline += k + ","
+
                 headline_corpus.append(headline[:-1])
                 headline_to_cluster[headline[:-1]] = cl
                 headline_to_tid[headline[:-1]] = tids_window_corpus[first_idx]
