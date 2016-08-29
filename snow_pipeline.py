@@ -51,7 +51,7 @@ def mostrarNTweetsCluster2(N, data_transform, indL, indL2): # N = num tweets por
 
 def mostrarNGramas2(indL, indL2, centroides, cuenta, inv_map): # sólo muestra los ngramas de cada cluster (2da clusterizacion)
     # Mostrar los n tweets de cada cluster
-    idx_clusts = sorted([(l, k) for k, l in enumerate(indL)], key=lambda x: x[0])   # lista indexada de los los clusters originales (índice empieza en 1) vs los tweets (índice empieza en 0)
+    # idx_clusts = sorted([(l, k) for k, l in enumerate(indL)], key=lambda x: x[0])   # lista indexada de los los clusters originales (índice empieza en 1) vs los tweets (índice empieza en 0)
     idx_clusts2 = sorted([(l, k) for k, l in enumerate(indL2)], key=lambda y: y[0]) # lista indexada de los los clusters nuevos (índice empieza en 1) vs los clusters originales (índice empieza en 0)
     frecuencia_ngramas_total = [-1] * len(set([idx_clusts2[i][0] for i in range(len(idx_clusts2))])) # se guarda la frecuencia de los ngramas en TODOS los clusters nuevos (separado por cluster nuevo)
 
@@ -155,68 +155,15 @@ def imprimirDendogramas(X, metodoDistancia):
     fig.suptitle('3 temas. [2,3] ngramas. Distancia ' + metodoDistancia + '.', fontsize=20)
     # plt.clf()
 
-    plt.subplot(3, 3, 1)
-    plt.title(hclust_methods[0])
-    hc_iris = fastcluster.linkage(X, method=hclust_methods[0])
-    sch.dendrogram(hc_iris,
-       color_threshold=1,
-       # p=6,
-       # truncate_mode='lastp',
-       show_leaf_counts=show_leaf_counts)
-
-    plt.subplot(3, 3, 2)
-    plt.title(hclust_methods[1])
-    hc_iris = fastcluster.linkage(X, method=hclust_methods[1])
-    sch.dendrogram(hc_iris,
-       color_threshold=1,
-       # p=6,
-       # truncate_mode='lastp',
-       show_leaf_counts=show_leaf_counts)
-
-    plt.subplot(3, 3, 3)
-    plt.title(hclust_methods[2])
-    hc_iris = fastcluster.linkage(X, method=hclust_methods[2])
-    sch.dendrogram(hc_iris,
-       color_threshold=1,
-       # p=6,
-       # truncate_mode='lastp',
-       show_leaf_counts=show_leaf_counts)
-
-    plt.subplot(3, 3, 4)
-    plt.title(hclust_methods[3])
-    hc_iris = fastcluster.linkage(X, method=hclust_methods[3])
-    sch.dendrogram(hc_iris,
-       color_threshold=1,
-       # p=6,
-       # truncate_mode='lastp',
-       show_leaf_counts=show_leaf_counts)
-
-    plt.subplot(3, 3, 5)
-    plt.title(hclust_methods[4])
-    hc_iris = fastcluster.linkage(X, method=hclust_methods[4])
-    sch.dendrogram(hc_iris,
-       color_threshold=1,
-       # p=6,
-       # truncate_mode='lastp',
-       show_leaf_counts=show_leaf_counts)
-
-    plt.subplot(3, 3, 6)
-    plt.title(hclust_methods[5])
-    hc_iris = fastcluster.linkage(X, method=hclust_methods[5])
-    sch.dendrogram(hc_iris,
-       color_threshold=1,
-       # p=6,
-       # truncate_mode='lastp',
-       show_leaf_counts=show_leaf_counts)
-
-    plt.subplot(3, 3, 7)
-    plt.title(hclust_methods[6])
-    hc_iris = fastcluster.linkage(X, method=hclust_methods[6])
-    sch.dendrogram(hc_iris,
-       color_threshold=1,
-       # p=6,
-       # truncate_mode='lastp',
-       show_leaf_counts=show_leaf_counts)
+    for a in range(7):
+        plt.subplot(3, 3, a+1)
+        plt.title(hclust_methods[a])
+        hc_iris = fastcluster.linkage(X, method=hclust_methods[a])
+        sch.dendrogram(hc_iris,
+           color_threshold=1,
+           # p=6,
+           # truncate_mode='lastp',
+           show_leaf_counts=show_leaf_counts)
 
     # plt.figure(iris_dendlist[[i]], axes = False, horiz = True)
     show_leaf_counts = True
@@ -225,6 +172,32 @@ def imprimirDendogramas(X, metodoDistancia):
 
     # plt.show()
     # plt.figure(1, figsize=(6, 5))
+
+
+    # genera un query de acuerdo a los clusters de interés (y con la especificidad del threshold)
+def generaQuery(noClusters,nuevos_ngramas, threshold):
+    #primero revisa que threshold esté entre 0 y 1
+    if (threshold > 1):
+        threshold = 1
+    if (threshold < 0):
+        threshold = 0
+    query = ""
+    for i in range(len(nuevos_ngramas)):
+        if (i+1) in noClusters:
+            if query:
+                query = query + "OR "
+            query = query + "("
+            for j in range(len(nuevos_ngramas[i])):
+                if(nuevos_ngramas[i][j][1] >= nuevos_ngramas[i][0][1]*(1-threshold)):
+                    ng=re.split("[ @#]",nuevos_ngramas[i][j][0])
+                    ng=' '.join([x for x in ng if x])  # elimina strings vacíos
+                    query = query + "\"" + ng + "\" "
+                else:
+                    break
+            query = query + ") "
+
+
+    return query
 
 
 if __name__ == "__main__":
@@ -401,7 +374,7 @@ if __name__ == "__main__":
         res = mostrarNGramas(centroides, freqTwCl2, indL2 , [])
 
         print("NGRAMAS de los clusters nuevos: ")
-        mostrarNGramas2( indL, indL2, centroides, cuenta, inv_map)
+        nuevos_ngramas = mostrarNGramas2( indL, indL2, centroides, cuenta, inv_map)
 
         nuevos_centroides = res[0]
 
@@ -421,13 +394,23 @@ if __name__ == "__main__":
         imprimirDendogramas(X_centroides, metodoDistancia='euclideana')
 
         plt.show()
+
+
+        # generación del query basado en los clusters de interés
+        eleccion = input("\n\nÉchale un vistazo a los clusters arriba mostrados. "
+                         "¿Cuáles de ellos te interesan? Indícalo a continuación (separado con espacios):")
+        noClusters = eleccion.split()
+        for i in range(len(noClusters)):
+            noClusters[i]=int(noClusters[i])
+
+        # print(noClusters)
+        # print(nuevos_ngramas)
+        threshold = 0.4  # qué tantos ngramas de cada cluster se quieren considerar (porcentaje de tweets que tienen ese ngrama) 1 = todos.
+        print("\nEl query de tu interés es el siguiente: ")
+        print(generaQuery(noClusters,nuevos_ngramas,threshold))
         # mostrarNTweetsCluster2(3, data_transform, indL, indL2)
 
 
-        ## revisar diferencia en este, que falla:
-        #mng2 = mostrarNGramas(data_transform2)
-
-        #falta...
 
 
         # ver a qué cluster pertenece un nuevo tweet (ejemplo a continuación):
