@@ -176,3 +176,8 @@ def quitarEmoticons(text):
 
 def tokens2daClust(tweet):
     return tweet.split(' , ')
+
+
+def steamWord(palabra):
+    p_stemmer = PorterStemmer()
+    return p_stemmer.stem(palabra)
