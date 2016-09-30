@@ -93,34 +93,36 @@ def mostrarNGramas2(indL2, centroides, cuenta, inv_map): # sólo muestra los ngr
         ngrama_mayor = []
         nueva_lista_ngramas = {}
 
+        print("Cluster {}, ngramas: {}".format(f, [l[0] for l in lista_ngramas_por_cluster[f].items()]))
+
         ngramas = [l[0] for l in lista_ngramas_por_cluster[f].items()]
         cantidades = [l[1] for l in lista_ngramas_por_cluster[f].items()]
 
         # agrupando conjuntos similares de ngramas
         indices_conjunto = []
-        indices_conjunto.append([])
         num_conjuntos = 1
-        indices_conjunto[num_conjuntos-1].append(0)
         for i in range(len(ngramas)):
+            if not contieneElemento(indices_conjunto,i)[0]: # si el ngrama no existe en algún conjunto
+                indices_conjunto.append([])
+                indices_conjunto[num_conjuntos-1].append(i)
+                num_conjuntos = num_conjuntos + 1
+
             for j in range(len(ngramas)):
                 if i != j:
-                    if not set(ngramas[i].split()).isdisjoint(ngramas[j].split()): #es interseccion
+                    if set([steamWord(x) for x in ngramas[i].split()]).issuperset([steamWord(x) for x in ngramas[j].split()]): #es interseccion
                         encontrado, indice_encontrado = contieneElemento(indices_conjunto,i)
-                        if encontrado and not j in indices_conjunto[indice_encontrado]:
-                            indices_conjunto[indice_encontrado].append(j)
-                    else: # no es interseccion, crear nuevo conjunto
-                        encontrado, indice_encontrado = contieneElemento(indices_conjunto,j)
-                        if not encontrado:
-                            indices_conjunto.append([])
-                            num_conjuntos = num_conjuntos + 1
-                            indices_conjunto[num_conjuntos-1].append(j)
+                        encontradoj, indice_encontradoj = contieneElemento(indices_conjunto, j)
 
-        # eliminar conjuntos de un solo elemento que ya están contenidos en otro conjunto
-        for i in range(num_conjuntos):
-            if i < len(indices_conjunto):
-                if len(indices_conjunto[i]) == 1:
-                    if (contieneElemento(indices_conjunto, indices_conjunto[i][0])[0]):
-                        indices_conjunto.remove(indices_conjunto[i])
+                        j_estaSolo = len(indices_conjunto[indice_encontradoj])==1
+
+                        if encontrado and not encontradoj:
+                            indices_conjunto[indice_encontrado].append(j)
+                        elif encontrado and encontradoj and j_estaSolo:
+                            indices_conjunto[indice_encontrado].append(j)
+                            indices_conjunto.remove(indices_conjunto[indice_encontradoj])
+                            num_conjuntos = num_conjuntos - 1
+                    # else: # no es interseccion, crear nuevo conjunto
+
 
         superconjuntos = []
         for c in indices_conjunto:
@@ -404,40 +406,28 @@ if __name__ == "__main__":
         for i in range(nuevos_centroides.shape[0]):
             tweets_cerca = sorted([(l, k) for k, l in enumerate(cercanos[i])], key=lambda y: y[0])
             n_min = min(int(nuevos_ngramas[i][0][1]), n) # falta generar cuenta 2
-            print("\nNgramas clusters {}: {}".format(i, nuevos_ngramas[i]))
-            for j in range(n_min):
-                tweet = tweets_cluster[ventana][
-                    data_transform.named_steps['filtrar'].map_index_after_cleaning.get(tweets_cerca[j][1])]
-                print("Tweet cercano al cluster {} es {}".format(i, tweet))
+            print("Ngramas clusters {}: {}".format(i, nuevos_ngramas[i]))
+        #     for j in range(n_min):
+        #         tweet = tweets_cluster[ventana][
+        #             data_transform.named_steps['filtrar'].map_index_after_cleaning.get(tweets_cerca[j][1])]
+        #         print("Tweet cercano al cluster {} es {}".format(i, tweet))
 
         imprimirDendogramas(X_centroides, metodoDistancia='euclideana')
         plt.show()
 
         # generación del query basado en los clusters de interés
-        eleccion = input("\n\nÉchale un vistazo a los clusters arriba mostrados. "
-                         "¿Cuáles de ellos te interesan? Indícalo a continuación (separado con espacios):")
-        noClusters = eleccion.split()
-        for i in range(len(noClusters)):
-            noClusters[i]=int(noClusters[i])
+        # eleccion = input("\n\nÉchale un vistazo a los clusters arriba mostrados. "
+        #                  "¿Cuáles de ellos te interesan? Indícalo a continuación (separado con espacios):")
+        # noClusters = eleccion.split()
+        # for i in range(len(noClusters)):
+        #     noClusters[i]=int(noClusters[i])
+        #
+        # threshold = 0.4  # qué tantos ngramas de cada cluster se quieren considerar (porcentaje de tweets que tienen ese ngrama) 1 = todos.
+        # print("\nEl query de tu interés es el siguiente: ")
+        # print(generaQuery(noClusters,nuevos_ngramas,threshold))
 
-        threshold = 0.4  # qué tantos ngramas de cada cluster se quieren considerar (porcentaje de tweets que tienen ese ngrama) 1 = todos.
-        print("\nEl query de tu interés es el siguiente: ")
-        print(generaQuery(noClusters,nuevos_ngramas,threshold))
 
         # ver a qué cluster pertenece un nuevo tweet (ejemplo a continuación):
-
-        # tuit = "Me ha gustado un video de @youtube."  # este no lo clasifica bien, sino que lo clasifica al cluster basura. SOLUCIÓN: no considerar al cluster basura.
-        # c = clusterDelTweet(tuit, centroides, cuenta)
-        # print("El nuevo tweet {} pertenece al cluster {}.\n".format(tuit, c))
-        #
-        # tuit = "La alianza pan prd se está llevando a cabo."
-        # c = clusterDelTweet(tuit, centroides, cuenta)
-        # print("El nuevo tweet {} pertenece al cluster {}.\n".format(tuit, c))
-        #
-        # tuit = "Se está construyendo un nuevo modelo económico que mejore al país."
-        # c = clusterDelTweet(tuit, centroides, cuenta)
-        # print("El nuevo tweet {} pertenece al cluster {}.\n".format(tuit, c))
-        #
         # tuit = "Ya listos para la copa corona mx?"
         # c = clusterDelTweet(tuit, centroides, cuenta)
         # print("El nuevo tweet {} pertenece al cluster {}.\n".format(tuit, c))
