@@ -109,7 +109,7 @@ def mostrarNGramas2(indL2, centroides, cuenta, inv_map): # sólo muestra los ngr
 
             for j in range(len(ngramas)):
                 if i != j:
-                    if set([steamWord(x) for x in ngramas[i].split()]).issuperset([steamWord(x) for x in ngramas[j].split()]): #es interseccion
+                    if set([steamWord(x) for x in ngramas[i].split()]).issuperset(set([steamWord(x) for x in ngramas[j].split()])): #es super conjunto
                         encontrado, indice_encontrado = contieneElemento(indices_conjunto,i)
                         encontradoj, indice_encontradoj = contieneElemento(indices_conjunto, j)
 
@@ -124,6 +124,7 @@ def mostrarNGramas2(indL2, centroides, cuenta, inv_map): # sólo muestra los ngr
                     # else: # no es interseccion, crear nuevo conjunto
 
 
+        # hasta aqui indices_conjunto agrupa indices de palabras que pertenezcan a un mismo superconjunto
         superconjuntos = []
         for c in indices_conjunto:
             superconjunto = set()
@@ -131,7 +132,7 @@ def mostrarNGramas2(indL2, centroides, cuenta, inv_map): # sólo muestra los ngr
             minimo = cantidades[c[0]]
             for i in c:
                 superconjunto = superconjunto.union(ngramas[i].split())
-                minimo = min(minimo, cantidades[i])
+                minimo = min(minimo, cantidades[i]) # se queda con la cuenta minima del conjunto
 
             # crear regla OR para palabras con igual raíz
             elementos = [[x] for x in list(superconjunto)]
@@ -139,18 +140,38 @@ def mostrarNGramas2(indL2, centroides, cuenta, inv_map): # sólo muestra los ngr
             reglaConjunto = ''
             indices_yaAsociados = []
             for i in range(len(elementos)):
-                # nuevaRegla = elementos[i]
                 if not i in indices_yaAsociados:
                     for j in range(len(elementos)):
                          if i!=j:
+                             # del conjunto identifica palabras que tengan la misma raiz de palabra y las agrupa en un OR
+                             # REVISAR ver la posibilidad de considerar agrupar conjugaciones del mismo verbo
                              if elementos[i][0][0] == elementos[j][0][0] and steamWord(elementos[i][0]) == steamWord(elementos[j][0]):
                                 elementos[i].append(elementos[j][0])
                                 indices_yaAsociados.append(j)
 
+            # elimina la palabra que fue asociada por el OR
             for i in indices_yaAsociados:
                 elementos.remove(elementos[i])
 
-            superconjuntos.append((elementos, minimo))
+            # stringtify los elementos, para mostrar la regla
+            ands = ''
+            for e in range(len(elementos)):
+                if len(elementos[e]) > 1:
+                    ors = '('
+                else:
+                    ors = ''
+                for l in range(len(elementos[e])):
+                   ors = ors + elementos[e][l]
+                   if l < len(elementos[e])-1:
+                       ors = ors + ' OR '
+                   else:
+                       if len(elementos[e]) > 1:
+                        ors = ors + ')'
+                ands = ands + ors
+                if e < len(elementos)-1:
+                    ands = ands + ' '
+
+            superconjuntos.append((ands, minimo))
 
             ## FINALIZA INTENTO AGRUPACION
 
@@ -275,7 +296,7 @@ if __name__ == "__main__":
     ventanas.append([])
     tweets_cluster = []
     tweets_cluster.append([])
-    archivo = open('PanCoronaModelojsons/3temas.txt')
+    archivo = open('PanCoronaModelojsons/MODELO_TWS')
     start = time.time()
     for line in archivo:
         contenido = line.split('\\\\\\\\\\\\')
