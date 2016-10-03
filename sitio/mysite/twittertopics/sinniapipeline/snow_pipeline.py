@@ -2,7 +2,7 @@
 
 from sklearn.pipeline import Pipeline, FeatureUnion, make_pipeline
 from sklearn.feature_extraction.text import CountVectorizer
-from .LimpiarTweets import limpiarTextoTweet, quitarAcentos, quitarEmoticons
+from .LimpiarTweets import limpiarTextoTweet, quitarAcentos, quitarEmoticons, steamWord
 from .snow_datatransformer import BinaryToDistanceTransformer, FiltroNGramasTransformer
 from collections import Counter
 from .misStopWords import creaStopWords
@@ -15,6 +15,17 @@ import re
 import time
 
 class pipeline:
+    def contieneElemento(self, matriz, elemento):
+        encontrado = False
+        indice_encontrado = -1
+
+        for k in range(len(matriz)):
+            if elemento in matriz[k]:
+                encontrado = True
+                indice_encontrado = k
+                break
+        return encontrado, indice_encontrado
+
     def mostrarNGramas2(self, indL, indL2, centroides, cuenta, inv_map): # sólo muestra los ngramas de cada cluster (2da clusterizacion)
         # Mostrar los n tweets de cada cluster
         idx_clusts2 = sorted([(l, k) for k, l in enumerate(indL2)], key=lambda y: y[0]) # lista indexada de los los clusters nuevos (índice empieza en 1) vs los clusters originales (índice empieza en 0)
@@ -35,8 +46,96 @@ class pipeline:
             for ng in range(len(frecuencia_ngramas_total[f])):
                 if frecuencia_ngramas_total[f][ng] > 0:
                     lista_ngramas_por_cluster[f][inv_map[ng]]=frecuencia_ngramas_total[f][ng]
-            lista_ngramas_por_cluster[f] = sorted(lista_ngramas_por_cluster[f].items(), key=lambda x: x[1], reverse=True)
-            print(lista_ngramas_por_cluster[f])
+            ## ANTES, sin agrupacion:
+            ## lista_ngramas_por_cluster[f] = sorted(lista_ngramas_por_cluster[f].items(), key=lambda x: x[1], reverse=True)
+
+            ### AGRUPACION DE NGRAMAS
+            # ('agustin basave', 14.0), ('agustin basave renuncia', 14.0), ('renuncia agustin', 14.0) -> ('agustin basave renuncia', 14.0)
+            # ('alianza pan') ('alianzas pan') -> ('(alianza OR alianzas) pan')
+
+            print("Cluster {}, ngramas: {}".format(f, [l[0] for l in lista_ngramas_por_cluster[f].items()]))
+
+            ngramas = [l[0] for l in lista_ngramas_por_cluster[f].items()]
+            cantidades = [l[1] for l in lista_ngramas_por_cluster[f].items()]
+
+            # agrupando conjuntos similares de ngramas
+            indices_conjunto = []
+            num_conjuntos = 1
+            for i in range(len(ngramas)):
+                if not self.contieneElemento(indices_conjunto, i)[0]:  # si el ngrama no existe en algún conjunto
+                    indices_conjunto.append([])
+                    indices_conjunto[num_conjuntos - 1].append(i)
+                    num_conjuntos = num_conjuntos + 1
+
+                for j in range(len(ngramas)):
+                    if i != j:
+                        if set([steamWord(x) for x in ngramas[i].split()]).issuperset(
+                                set([steamWord(x) for x in ngramas[j].split()])):  # es super conjunto
+                            encontrado, indice_encontrado = self.contieneElemento(indices_conjunto, i)
+                            encontradoj, indice_encontradoj = self.contieneElemento(indices_conjunto, j)
+
+                            j_estaSolo = len(indices_conjunto[indice_encontradoj]) == 1
+
+                            if encontrado and not encontradoj:
+                                indices_conjunto[indice_encontrado].append(j)
+                            elif encontrado and encontradoj and j_estaSolo:
+                                indices_conjunto[indice_encontrado].append(j)
+                                indices_conjunto.remove(indices_conjunto[indice_encontradoj])
+                                num_conjuntos = num_conjuntos - 1
+
+            # hasta aqui indices_conjunto agrupa indices de palabras que pertenezcan a un mismo superconjunto
+            superconjuntos = []
+            for c in indices_conjunto:
+                superconjunto = set()
+
+                minimo = cantidades[c[0]]
+                for i in c:
+                    superconjunto = superconjunto.union(ngramas[i].split())
+                    minimo = min(minimo, cantidades[i])  # se queda con la cuenta minima del conjunto
+
+                # crear regla OR para palabras con igual raíz
+                elementos = [[x] for x in list(superconjunto)]
+
+                reglaConjunto = ''
+                indices_yaAsociados = []
+                for i in range(len(elementos)):
+                    if not i in indices_yaAsociados:
+                        for j in range(len(elementos)):
+                            if i != j:
+                                # del conjunto identifica palabras que tengan la misma raiz de palabra y las agrupa en un OR
+                                # REVISAR ver la posibilidad de considerar agrupar conjugaciones del mismo verbo
+                                if elementos[i][0][0] == elementos[j][0][0] and steamWord(
+                                        elementos[i][0]) == steamWord(elementos[j][0]):
+                                    elementos[i].append(elementos[j][0])
+                                    indices_yaAsociados.append(j)
+
+                # elimina la palabra que fue asociada por el OR
+                for i in indices_yaAsociados:
+                    elementos.remove(elementos[i])
+
+                # stringtify de elementos, para mostrar la regla
+                ands = ''
+                for e in range(len(elementos)):
+                    if len(elementos[e]) > 1:
+                        ors = '('
+                    else:
+                        ors = ''
+                    for l in range(len(elementos[e])):
+                        ors = ors + elementos[e][l]
+                        if l < len(elementos[e]) - 1:
+                            ors = ors + ' OR '
+                        else:
+                            if len(elementos[e]) > 1:
+                                ors = ors + ')'
+                    ands = ands + ors
+                    if e < len(elementos) - 1:
+                        ands = ands + ' '
+
+                superconjuntos.append((ands, minimo))
+            lista_ngramas_por_cluster[f] = sorted(superconjuntos, key=lambda x: x[1], reverse=True)
+            ## FINALIZA AGRUPACION
+
+            # print(lista_ngramas_por_cluster[f])
 
         return lista_ngramas_por_cluster
 

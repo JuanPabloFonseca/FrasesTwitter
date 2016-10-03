@@ -173,3 +173,7 @@ def quitarEmoticons(text):
     bien = re.sub(r"&gt;|&lt;(3+)?|\\n|(:|;)(\)|\(|D|\*)|&amp;|\*-\*|(x|X)(d|D)", ' ', bien)
 
     return bien
+
+def steamWord(palabra):
+    p_stemmer = PorterStemmer()
+    return p_stemmer.stem(palabra)

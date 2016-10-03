@@ -83,15 +83,9 @@ def mostrarNGramas2(indL2, centroides, cuenta, inv_map): # sólo muestra los ngr
                 lista_ngramas_por_cluster[f][inv_map[ng]]=frecuencia_ngramas_total[f][ng]
 
 
-        ### PRIMER INTENTO DE AGRUPACION
-        # ERROR:
-        # ['nacional prd', 'agustin basave dijo', 'prd agustin', 'agustin basave', 'alianza pan', 'basave dijo', 'pan prd', 'alianza pan prd', 'prd agustin basave']
-        # [[0, 2, 6, 7, 8, 1, 3, 5, 4], [1, 2, 3, 5, 8], [4, 6, 7]]
-
-        # filtro de ngramas, convertir
+        ### AGRUPACION DE NGRAMAS
         # ('agustin basave', 14.0), ('agustin basave renuncia', 14.0), ('renuncia agustin', 14.0) -> ('agustin basave renuncia', 14.0)
-        ngrama_mayor = []
-        nueva_lista_ngramas = {}
+        # ('alianza pan') ('alianzas pan') -> ('(alianza OR alianzas) pan')
 
         print("Cluster {}, ngramas: {}".format(f, [l[0] for l in lista_ngramas_por_cluster[f].items()]))
 
@@ -121,8 +115,6 @@ def mostrarNGramas2(indL2, centroides, cuenta, inv_map): # sólo muestra los ngr
                             indices_conjunto[indice_encontrado].append(j)
                             indices_conjunto.remove(indices_conjunto[indice_encontradoj])
                             num_conjuntos = num_conjuntos - 1
-                    # else: # no es interseccion, crear nuevo conjunto
-
 
         # hasta aqui indices_conjunto agrupa indices de palabras que pertenezcan a un mismo superconjunto
         superconjuntos = []
@@ -153,7 +145,7 @@ def mostrarNGramas2(indL2, centroides, cuenta, inv_map): # sólo muestra los ngr
             for i in indices_yaAsociados:
                 elementos.remove(elementos[i])
 
-            # stringtify los elementos, para mostrar la regla
+            # stringtify de elementos, para mostrar la regla
             ands = ''
             for e in range(len(elementos)):
                 if len(elementos[e]) > 1:
@@ -173,7 +165,7 @@ def mostrarNGramas2(indL2, centroides, cuenta, inv_map): # sólo muestra los ngr
 
             superconjuntos.append((ands, minimo))
 
-            ## FINALIZA INTENTO AGRUPACION
+            ## FINALIZA AGRUPACION
 
         lista_ngramas_por_cluster[f] = sorted(superconjuntos, key=lambda x: x[1], reverse=True)
         # print(lista_ngramas_por_cluster[f])
@@ -296,7 +288,7 @@ if __name__ == "__main__":
     ventanas.append([])
     tweets_cluster = []
     tweets_cluster.append([])
-    archivo = open('PanCoronaModelojsons/MODELO_TWS')
+    archivo = open('PanCoronaModelojsons/CORONA_TWS')
     start = time.time()
     for line in archivo:
         contenido = line.split('\\\\\\\\\\\\')
