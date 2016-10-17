@@ -17,6 +17,7 @@ def obtenerTweetsArchivo(str):
                 data.append(line[2:])
     return data
 
+
 def cargarTweetsEnDB():
     data = []
     with open('/home/eduardomartinez/Documents/Sinnia/json/corona.json') as f:
