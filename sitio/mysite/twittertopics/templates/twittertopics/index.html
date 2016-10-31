@@ -44,7 +44,7 @@
                     </tr>
                     <tr>
                         <td>
-                            Temas específicos
+                            Tópicos específicos
                         </td>
                         <td>
                             <input id="threshold" type="range" name="threshold" value="0.5"
@@ -53,7 +53,7 @@
                             <output for="fader" id="volume">50</output>
                         </td>
                         <td>
-                            Temas generales
+                            Tópicos generales
                         </td>
                     </tr>
                 </tbody>
@@ -65,7 +65,7 @@
         <form id="tweet_form" accept-charset="utf-8"
               enctype="multipart/form-data" action="/twittertopics/tweet" method="post">
             {% csrf_token %}
-            <label name="lblTweet">Indentifica a que cluster pertenece un tweet</label>
+            <label name="lblTweet">Identifica a que tópico pertenece un tweet</label>
             <br />
             <input type="text" name="tweet">
             <input type="submit" name="Identificar">

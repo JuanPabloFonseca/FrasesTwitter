@@ -4,6 +4,7 @@ import ObtenerTweets
 import LimpiarTweets
 
 from sklearn.metrics import precision_recall_fscore_support
+from sklearn.metrics import normalized_mutual_info_score
 
 import pandas as pd
 
@@ -50,6 +51,9 @@ def baseline():
 
         print("Precision {0}, Recall {1}, F1 {2}".format(pr,rc,fb))
         comportamiento.append([pr, rc, fb])
+
+        print("Purity LDA: {0}".format(purity(clasificacion_original,clasificacion_modeloG)))
+        print("NMI: {0}".format(normalized_mutual_info_score(clasificacion_original,clasificacion_modeloG)))
 
     r = np.array(comportamiento)
     prom = r.mean(axis=0)
@@ -104,6 +108,18 @@ def mostrarTweets(num_topicos, datos_originales, clasificacion_original):
                 print(datos_originales[i])
             if limite > 10:
                 break
+
+def purity(c_original,c_modelo):
+    purity = 0
+    for i in range(len(set(c_modelo))):
+        cnt=[0]*len(set(c_original))
+        for j in range(len(c_modelo)):
+            if c_modelo[j] == i:
+                cnt[c_original[j]]=cnt[c_original[j]]+1
+        purity = purity + max(cnt)
+    purity = purity/len(c_modelo)
+    return purity
+
 
 if __name__ == '__main__':
     baseline()
