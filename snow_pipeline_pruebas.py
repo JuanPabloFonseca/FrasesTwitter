@@ -399,7 +399,7 @@ if __name__ == "__main__":
         X_centroides = data_transform2.fit_transform(centroides)
 
         L2 = fastcluster.linkage(X_centroides, method='ward')
-        dt2 = 0.3 # variarle a éste
+        dt2 = 0.6 # variarle a éste
         '''
         dt2     purity     NMI
         0.1     46.3%      5.6%
