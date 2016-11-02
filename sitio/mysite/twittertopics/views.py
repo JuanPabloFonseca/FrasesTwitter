@@ -50,15 +50,18 @@ def index(request):
         cache.set('centroides',centroides)
         # cache.set('cuenta',cuenta)
 
+        plt.clf() # prueba clean previous plot
+
         plt.figure(1, figsize=(6, 5))
+
         show_leaf_counts = True
         ddata = augmented_dendrogram(L,
-                       color_threshold=1,
+                       color_threshold=threshold,
                        # p=6,
                        # truncate_mode='lastp',
                        show_leaf_counts=show_leaf_counts)
 
-        plt.title("show_leaf_counts = %s" % show_leaf_counts)
+        # plt.title("show_leaf_counts = %s" % show_leaf_counts)
 
         plt.savefig('plot.png')
 
@@ -96,6 +99,7 @@ def augmented_dendrogram(*args, **kwargs):
         #        x = 0.5 * sum(i[1:3])
         #        y = d[1]
         #        plt.plot(x, y, 'ro')
+        #        # plt.figure(x,y,'ro',1, figsize=(6, 5))
         #        plt.annotate("%.3g" % y, (x, y), xytext=(0, -8),
         #                     textcoords='offset points',
         #                     va='top', ha='center')
