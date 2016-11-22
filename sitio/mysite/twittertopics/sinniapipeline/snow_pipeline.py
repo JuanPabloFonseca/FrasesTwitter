@@ -110,8 +110,13 @@ class pipeline:
                                     indices_yaAsociados.append(j)
 
                 # elimina la palabra que fue asociada por el OR
+                temp = 0
                 for i in indices_yaAsociados:
-                    elementos.remove(elementos[i])
+                    try:
+                        elementos.remove(elementos[i-temp])
+                        temp=temp+1
+                    except IndexError:
+                        print("Revisar elementos {}, indice a eliminar {}".format(elementos,i-temp))
 
                 # stringtify de elementos, para mostrar la regla
                 ands = ''

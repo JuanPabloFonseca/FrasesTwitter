@@ -1,7 +1,7 @@
 #!/usr/bin/python3.5
 
 from nltk.tokenize import RegexpTokenizer
-from nltk.stem.porter import PorterStemmer
+from nltk.stem.snowball import SnowballStemmer
 import re
 import time
 
@@ -175,5 +175,6 @@ def quitarEmoticons(text):
     return bien
 
 def steamWord(palabra):
-    p_stemmer = PorterStemmer()
-    return p_stemmer.stem(palabra)
+    #p_stemmer = PorterStemmer()
+    snow_stemmer = SnowballStemmer(language='spanish')
+    return snow_stemmer.stem(palabra)
