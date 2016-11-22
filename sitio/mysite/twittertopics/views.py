@@ -6,6 +6,9 @@ import base64
 import matplotlib.pyplot as plt
 from scipy.cluster.hierarchy import dendrogram
 
+from django.views.decorators.csrf import ensure_csrf_cookie
+
+@ensure_csrf_cookie
 def index(request):
     if request.method == "POST":
         L = cache.get('Linkage')

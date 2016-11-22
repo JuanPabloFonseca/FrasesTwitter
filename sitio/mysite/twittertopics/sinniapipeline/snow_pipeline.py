@@ -53,7 +53,7 @@ class pipeline:
             # ('agustin basave', 14.0), ('agustin basave renuncia', 14.0), ('renuncia agustin', 14.0) -> ('agustin basave renuncia', 14.0)
             # ('alianza pan') ('alianzas pan') -> ('(alianza OR alianzas) pan')
 
-            print("Cluster {}, ngramas: {}".format(f, [l[0] for l in lista_ngramas_por_cluster[f].items()]))
+            print("{} Cluster {}, ngramas: {}".format(datetime.now().ctime(), f, [l[0] for l in lista_ngramas_por_cluster[f].items()]))
 
             ngramas = [l[0] for l in lista_ngramas_por_cluster[f].items()]
             cantidades = [l[1] for l in lista_ngramas_por_cluster[f].items()]
@@ -234,9 +234,9 @@ class pipeline:
                 tweets_cluster.append([])
                 tweet_unixtime_old = tweet_unixtime
         end = time.time()
-        print("tiempo leer ventanas: {} seg".format(end - start))
+        print("{} tiempo leer ventanas: {} seg".format(datetime.now().ctime(), end - start))
 
-        print("Ventanas: {}".format(len(ventanas)))
+        print("{} Ventanas: {}".format(datetime.now().ctime(), len(ventanas)))
         for ventana in range(len(ventanas)):
             print("VENTANA {}".format(ventana))
 
@@ -254,11 +254,11 @@ class pipeline:
             start = time.time()
             X = data_transform.fit_transform(ventanas[ventana])
             end = time.time()
-            print("tiempo pipeline: {} seg".format(end - start))
-            print("Tweets ventana {} vs limpios {}".format(len(ventanas[ventana]), X.shape[0]))
+            print("{} tiempo pipeline: {} seg".format(datetime.now().ctime(), end - start))
+            print("{} Tweets ventana {} vs limpios {}".format(datetime.now().ctime(), len(ventanas[ventana]), X.shape[0]))
 
             dt = 0.1
-            print("Primera clusterizacion")
+            print("{} Primera clusterizacion".format(datetime.now().ctime()))
             start = time.time()
 
             # ward,
@@ -289,17 +289,17 @@ class pipeline:
     def obtenerTopicos(self, LinkageMatrix, threshold, centroides_primera, Xclean, inv_map, map_index_after_cleaning, tweets_cluster, indL, cuenta):
 
         start = time.time()
-        print("Segunda clusterizacion")
+        print("{} Segunda clusterizacion".format(datetime.now().ctime()))
 
         T2 = sch.to_tree(LinkageMatrix)
 
-        print("hclust cut threshold:", T2.dist * threshold)
+        print("{} hclust cut threshold: {}".format(datetime.now().ctime(), T2.dist * threshold))
 
         indL2 = sch.fcluster(LinkageMatrix, T2.dist * threshold, 'distance')
         freqTwCl2 = Counter(indL2)
 
         end = time.time()
-        print("tiempo clustering: {} seg".format(end - start))
+        print("{} tiempo clustering: {} seg".format(datetime.now().ctime(), end - start))
 
 
         # mostrarNTweetsCluster(3, data_transform, indL)
