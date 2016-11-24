@@ -13,7 +13,7 @@ from scipy.spatial import distance
 import fastcluster
 import re
 import time
-
+from nltk.tag import StanfordPOSTagger
 
 import matplotlib.pyplot as plt
 
@@ -86,7 +86,7 @@ def mostrarNGramas2(indL2, centroides, cuenta, inv_map): # sólo muestra los ngr
         # ('agustin basave', 14.0), ('agustin basave renuncia', 14.0), ('renuncia agustin', 14.0) -> ('agustin basave renuncia', 14.0)
         # ('alianza pan') ('alianzas pan') -> ('(alianza OR alianzas) pan')
 
-        print("Cluster {}, ngramas: {}".format(f, [l[0] for l in lista_ngramas_por_cluster[f].items()]))
+        print("Cluster {}, max. tweets {}, min. tweets {}, ngramas: {}".format(f, max([l[1] for l in lista_ngramas_por_cluster[f].items()]), min([l[1] for l in lista_ngramas_por_cluster[f].items()]), [l[0] for l in lista_ngramas_por_cluster[f].items()]))
 
         ngramas = [l[0] for l in lista_ngramas_por_cluster[f].items()]
         cantidades = [l[1] for l in lista_ngramas_por_cluster[f].items()]
@@ -120,7 +120,7 @@ def mostrarNGramas2(indL2, centroides, cuenta, inv_map): # sólo muestra los ngr
         for c in indices_conjunto:
             superconjunto = set()
 
-            minimo = cantidades[c[0]]
+            minimo = cantidades[c[0]] # número minimo de tweets
             for i in c:
                 superconjunto = superconjunto.union(ngramas[i].split())
                 minimo = min(minimo, cantidades[i]) # se queda con la cuenta minima del conjunto
@@ -165,6 +165,9 @@ def mostrarNGramas2(indL2, centroides, cuenta, inv_map): # sólo muestra los ngr
             superconjuntos.append((ands, minimo))
 
             ## FINALIZA AGRUPACION
+
+            ## falta retomar orden de ngrama original
+
 
         lista_ngramas_por_cluster[f] = sorted(superconjuntos, key=lambda x: x[1], reverse=True)
         # print(lista_ngramas_por_cluster[f])
@@ -413,18 +416,43 @@ if __name__ == "__main__":
                 distActual = distance.euclidean(nuevos_centroides[i], Xclean[k, :])
                 cercanos[i][k] = distActual
 
+        st = StanfordPOSTagger('spanish-distsim.tagger')
         n = 5
+        calificacion_cluster = []
         for i in range(nuevos_centroides.shape[0]):
             tweets_cerca = sorted([(l, k) for k, l in enumerate(cercanos[i])], key=lambda y: y[0])
             n_min = min(int(nuevos_ngramas[i][0][1]), n) # falta generar cuenta 2
-            print("Ngramas clusters {}: {}".format(i, nuevos_ngramas[i]))
-        #     for j in range(n_min):
-        #         tweet = tweets_cluster[ventana][
-        #             data_transform.named_steps['filtrar'].map_index_after_cleaning.get(tweets_cerca[j][1])]
-        #         print("Tweet cercano al cluster {} es {}".format(i, tweet))
+            # print("Ngramas clusters {}: {}".format(i, nuevos_ngramas[i]))
+            calificaciones = []
+            for j in range(n_min):
+                indiceTweet = data_transform.named_steps['filtrar'].map_index_after_cleaning.get(tweets_cerca[j][1])
+                tweet = tweets_cluster[ventana][indiceTweet]
+                tweetbag = ventanas[ventana][indiceTweet]
+                # print("Tweet cercano al cluster {} es: {} tweetbag: {}".format(i, tweet, tweetbag))
+                tokens = st.tag(tweetbag)  # REMOVES UNDERSCORES FROM TOKENS
+                calificaciones.append(len([x for x in tokens if x[1].startswith('n')])) #contar sustantivos del tweet
+            print("\nCalificando cluster {}".format(i))
+            calificacion_cluster.append(sum(calificaciones)/len(calificaciones))
+
+        cal_normalizadas = [c/max(calificacion_cluster) for c in calificacion_cluster]
+        calificacion_cluster = sorted([(l, k) for k, l in enumerate(cal_normalizadas)], key=lambda x:x[0], reverse=True)
+
+        # print("\nCalificaciones clusters {}".format(calificacion_cluster))
+
+        # impresion de los clusters con tweets despues de ordenamiento
+        print("\n\nOrdenamiento basado en sustantivos")
+        for norm in calificacion_cluster:
+            print("\nCluster {}, calificacion {}, ngramas {}".format(norm[1], round(norm[0],2), nuevos_ngramas[norm[1]]))
+            tweets_cerca = sorted([(l, k) for k, l in enumerate(cercanos[norm[1]])], key=lambda y: y[0])
+            n_min = min(int(nuevos_ngramas[norm[1]][0][1]), n)
+            for j in range(n_min):
+                indiceTweet = data_transform.named_steps['filtrar'].map_index_after_cleaning.get(tweets_cerca[j][1])
+                tweet = tweets_cluster[ventana][indiceTweet]
+                print("\nTweet cercano al cluster {} es: {}".format(norm[1], tweet))
 
         imprimirDendogramas(X_centroides, metodoDistancia='euclideana')
         plt.show()
+
 
 
         # generación del query basado en los clusters de interés:

@@ -82,6 +82,7 @@
         {% for c,t,ng in topics %}
             <li>
                 <div>
+                    <p style="font-size:1em;">Relevancia: {{c}}</p>
                     <p class="ngramas">
                     {% with val=ng.0.1 s=0 %}
                         {% for ngrama in ng %}

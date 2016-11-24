@@ -13,11 +13,8 @@ class BinaryToDistanceTransformer(TransformerMixin):
     def transform(self, X, y=None, **fit_params):
 
         # Xdense = np.matrix(X).astype('float')
-
         X_scaled = preprocessing.scale(X) # hace copia de los datos, posible optimizacion con copy=False, requiere sparce matrix
-
         X_normalized = preprocessing.normalize(X_scaled, norm=self.norm)
-
         X_dense = np.matrix(X_normalized).astype('float')
         return pairwise_distances(X_dense, metric=self.metric)
 

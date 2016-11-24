@@ -131,6 +131,10 @@ USE_L10N = True
 
 USE_TZ = True
 
+# PARA Stanford POS tagger
+os.environ['CLASSPATH'] = '/home/eduardomartinez/Documents/Sinnia/frasestwiiter/stanford-postagger-full-2015-12-09/stanford-postagger.jar'
+os.environ['STANFORD_MODELS'] = '/home/eduardomartinez/Documents/Sinnia/frasestwiiter/stanford-postagger-full-2015-12-09/models/'
+
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/1.9/howto/static-files/

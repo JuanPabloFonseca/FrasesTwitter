@@ -13,6 +13,7 @@ import scipy.cluster.hierarchy as sch
 import fastcluster
 import re
 import time
+from nltk.tag import StanfordPOSTagger
 
 class pipeline:
     def contieneElemento(self, matriz, elemento):
@@ -317,17 +318,56 @@ class pipeline:
         nuevos_centroides = res[0]
 
         # cambiar por top n tweets
+        # for i in range(nuevos_centroides.shape[0]):
+        #     cercano = 0
+        #     distancia = distance.euclidean(nuevos_centroides[i], Xclean[0, :])
+        #     for k in range(1, len(Xclean)):
+        #          distActual = distance.euclidean(nuevos_centroides[i], Xclean[k, :])
+        #          if distActual < distancia:
+        #             cercano = k
+        #             distancia = distActual
+        #     tweet = tweets_cluster[0][map_index_after_cleaning.get(cercano)]
+        #     # print("\nEl tweet mas cercano del cluster {} es {}".format(i+1, tweet))
+        #     main_ngram_in_cluster[i] = [cuenta[i], tweet, lista_ngramas_cluster[i]]
+
+
+
+
+        # cambiar por top n tweets
+        cercanos = np.zeros((nuevos_centroides.shape[0], Xclean.shape[0]))
         for i in range(nuevos_centroides.shape[0]):
-            cercano = 0
-            distancia = distance.euclidean(nuevos_centroides[i], Xclean[0, :])
-            for k in range(1, len(Xclean)):
-                 distActual = distance.euclidean(nuevos_centroides[i], Xclean[k, :])
-                 if distActual < distancia:
-                    cercano = k
-                    distancia = distActual
-            tweet = tweets_cluster[0][map_index_after_cleaning.get(cercano)]
-            # print("\nEl tweet mas cercano del cluster {} es {}".format(i+1, tweet))
-            main_ngram_in_cluster[i] = [cuenta[i], tweet, lista_ngramas_cluster[i]]
+            for k in range(0, len(Xclean)):
+                distActual = distance.euclidean(nuevos_centroides[i], Xclean[k, :])
+                cercanos[i][k] = distActual
+
+        st = StanfordPOSTagger('spanish-distsim.tagger')
+        n = 5
+        calificacion_cluster = []
+        tweets_cluster_ordenado = []
+        stop_words = creaStopWords()
+        for i in range(nuevos_centroides.shape[0]):
+            tweets_cerca = sorted([(l, k) for k, l in enumerate(cercanos[i])], key=lambda y: y[0])
+            n_min = min(int(lista_ngramas_cluster[i][0][1]), n)  # falta generar cuenta 2
+            # print("Ngramas clusters {}: {}".format(i, nuevos_ngramas[i]))
+            calificaciones = []
+            for j in range(n_min):
+                tweet = tweets_cluster[0][map_index_after_cleaning.get(tweets_cerca[j][1])]
+                tweetbag = features = limpiarTextoTweet(tweet, stop_words)
+                tokens = st.tag(tweetbag)  # REMOVES UNDERSCORES FROM TOKENS
+                print("\nTweetBag: {}".format(tweetbag))
+                calificaciones.append(
+                    len([x for x in tokens if x[1].startswith('n')]))  # contar sustantivos del tweet
+            print("\nCalificando cluster {}".format(i))
+            calificacion_cluster.append(sum(calificaciones) / len(calificaciones))
+            tweets_cluster_ordenado.append(tweets_cluster[0][map_index_after_cleaning.get(tweets_cerca[0][1])])
+        cal_normalizadas = [c / max(calificacion_cluster) for c in calificacion_cluster]
+        calificacion_cluster = sorted([(l, k) for k, l in enumerate(cal_normalizadas)], key=lambda x: x[0],
+                                      reverse=True)
+
+        i=0
+        for norm in calificacion_cluster:
+            main_ngram_in_cluster[i] = [round(norm[0],2), tweets_cluster_ordenado[norm[1]], lista_ngramas_cluster[norm[1]]]
+            i+=1
 
         #mng[0] es main_ngram_in_cluster, tiene info de # tweets por clust, tweet + repr. por clust, ngramas del clust
         #mng[1] son los centroides de los clusters
