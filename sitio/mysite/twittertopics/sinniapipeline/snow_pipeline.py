@@ -146,7 +146,7 @@ class pipeline:
         return lista_ngramas_por_cluster
 
     def relevanciaClusters(self, indL, indL2):
-        idx_clusts = sorted([(l, k) for k, l in enumerate(indL)], key=lambda x: x[0])
+        idx_clusts = sorted([(l, k) for k, l in  enumerate(indL)], key=lambda x: x[0])
         idx_clusts2 = sorted([(l, k) for k, l in enumerate(indL2)], key=lambda y: y[0])
         no_tweets_por_cluster = []
         ant = 1  # último número del cluster nuevo (para el ciclo, ver si cambia de cluster nuevo)
