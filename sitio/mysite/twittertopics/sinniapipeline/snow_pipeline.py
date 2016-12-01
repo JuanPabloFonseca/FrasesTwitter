@@ -145,6 +145,25 @@ class pipeline:
 
         return lista_ngramas_por_cluster
 
+    def relevanciaClusters(self, indL, indL2):
+        idx_clusts = sorted([(l, k) for k, l in enumerate(indL)], key=lambda x: x[0])
+        idx_clusts2 = sorted([(l, k) for k, l in enumerate(indL2)], key=lambda y: y[0])
+        no_tweets_por_cluster = []
+        ant = 1  # último número del cluster nuevo (para el ciclo, ver si cambia de cluster nuevo)
+        temp = 0  # sumas de tweets por cada cluster nuevo
+
+        for y in idx_clusts2:
+            if y[0] != ant:
+                no_tweets_por_cluster.append(temp)
+                temp = 0
+            no_tweets = len([x[1] for x in idx_clusts if x[0] == y[1] + 1])
+            temp = temp + no_tweets
+            ant = y[0]
+        no_tweets_por_cluster.append(temp)
+
+        relevancia = [x / sum(no_tweets_por_cluster) for x in no_tweets_por_cluster]
+        return relevancia
+
     def mostrarNGramas(self, Xclean, inv_map, map_index_after_cleaning, freqTwCl, indL, tweets_cluster, ventana):
 
         main_ngram_in_cluster = [-1] * len(freqTwCl)
@@ -340,28 +359,35 @@ class pipeline:
                 distActual = distance.euclidean(nuevos_centroides[i], Xclean[k, :])
                 cercanos[i][k] = distActual
 
-        st = StanfordPOSTagger('spanish-distsim.tagger')
+
+
+        # st = StanfordPOSTagger('spanish-distsim.tagger')
         n = 5
-        calificacion_cluster = []
+        # calificacion_cluster = []
         tweets_cluster_ordenado = []
-        stop_words = creaStopWords()
+        # stop_words = creaStopWords()
         for i in range(nuevos_centroides.shape[0]):
             tweets_cerca = sorted([(l, k) for k, l in enumerate(cercanos[i])], key=lambda y: y[0])
             n_min = min(int(lista_ngramas_cluster[i][0][1]), n)  # falta generar cuenta 2
             # print("Ngramas clusters {}: {}".format(i, nuevos_ngramas[i]))
-            calificaciones = []
+            # calificaciones = []
             for j in range(n_min):
                 tweet = tweets_cluster[0][map_index_after_cleaning.get(tweets_cerca[j][1])]
+                '''
                 tweetbag = features = limpiarTextoTweet(tweet, stop_words)
                 tokens = st.tag(tweetbag)  # REMOVES UNDERSCORES FROM TOKENS
                 print("\nTweetBag: {}".format(tweetbag))
                 calificaciones.append(
                     len([x for x in tokens if x[1].startswith('n')]))  # contar sustantivos del tweet
             print("\nCalificando cluster {}".format(i))
-            calificacion_cluster.append(sum(calificaciones) / len(calificaciones))
+            calificacion_cluster.append(sum(calificaciones) / len(calificaciones))'''
             tweets_cluster_ordenado.append(tweets_cluster[0][map_index_after_cleaning.get(tweets_cerca[0][1])])
-        cal_normalizadas = [c / max(calificacion_cluster) for c in calificacion_cluster]
-        calificacion_cluster = sorted([(l, k) for k, l in enumerate(cal_normalizadas)], key=lambda x: x[0],
+        # cal_normalizadas = [c / max(calificacion_cluster) for c in calificacion_cluster]
+
+
+
+        calificacion_cluster = self.relevanciaClusters(indL, indL2)
+        calificacion_cluster = sorted([(l, k) for k, l in enumerate(calificacion_cluster)], key=lambda x: x[0],
                                       reverse=True)
 
         i=0

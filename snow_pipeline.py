@@ -49,6 +49,29 @@ def mostrarNTweetsCluster2(N, data_transform, indL, indL2): # N = num tweets por
             print(tweets_cluster[ventana][data_transform.named_steps['filtrar'].map_index_after_cleaning.get(tuitscluster[k])])
         print(" ")
 
+def relevanciaClusters(indL, indL2):
+    idx_clusts = sorted([(l, k) for k, l in enumerate(indL)], key=lambda x: x[0])
+    idx_clusts2 = sorted([(l, k) for k, l in enumerate(indL2)], key=lambda y: y[0])
+    no_tweets_por_cluster=[]
+    ant=1 # último número del cluster nuevo (para el ciclo, ver si cambia de cluster nuevo)
+    temp=0 # sumas de tweets por cada cluster nuevo
+
+    for y in idx_clusts2:
+        if y[0]!=ant:
+            no_tweets_por_cluster.append(temp)
+            temp = 0
+        no_tweets = len([x[1] for x in idx_clusts if x[0] == y[1] + 1])
+        temp=temp+no_tweets
+        ant=y[0]
+    no_tweets_por_cluster.append(temp)
+
+    relevancia = [x/sum(no_tweets_por_cluster) for x in no_tweets_por_cluster]
+    return relevancia
+
+
+
+
+
 def contieneElemento(matriz, elemento):
     encontrado = False
     indice_encontrado = -1
@@ -416,7 +439,7 @@ if __name__ == "__main__":
                 distActual = distance.euclidean(nuevos_centroides[i], Xclean[k, :])
                 cercanos[i][k] = distActual
 
-        st = StanfordPOSTagger('spanish-distsim.tagger')
+        '''st = StanfordPOSTagger('spanish-distsim.tagger')
         n = 5
         calificacion_cluster = []
         for i in range(nuevos_centroides.shape[0]):
@@ -434,13 +457,14 @@ if __name__ == "__main__":
             print("\nCalificando cluster {}".format(i))
             calificacion_cluster.append(sum(calificaciones)/len(calificaciones))
 
-        cal_normalizadas = [c/max(calificacion_cluster) for c in calificacion_cluster]
-        calificacion_cluster = sorted([(l, k) for k, l in enumerate(cal_normalizadas)], key=lambda x:x[0], reverse=True)
+        cal_normalizadas = [c/max(calificacion_cluster) for c in calificacion_cluster]'''
+        calificacion_cluster = relevanciaClusters(indL, indL2)
+        calificacion_cluster = sorted([(l, k) for k, l in enumerate(calificacion_cluster)], key=lambda x:x[0], reverse=True)
 
         # print("\nCalificaciones clusters {}".format(calificacion_cluster))
 
         # impresion de los clusters con tweets despues de ordenamiento
-        print("\n\nOrdenamiento basado en sustantivos")
+        print("\n\nOrdenamiento basado en proporción de tweets por cluster")
         for norm in calificacion_cluster:
             print("\nCluster {}, calificacion {}, ngramas {}".format(norm[1], round(norm[0],2), nuevos_ngramas[norm[1]]))
             tweets_cerca = sorted([(l, k) for k, l in enumerate(cercanos[norm[1]])], key=lambda y: y[0])
